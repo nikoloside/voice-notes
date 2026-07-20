@@ -1,0 +1,10 @@
+# Core transcription and audio
+faster-whisper>=1.0.3
+sounddevice>=0.4.6
+numpy>=1.26
+tomli>=2.0; python_version < "3.11"
+
+# GPU runtime libraries (CUDA 12 / cuDNN 9) for ctranslate2, Linux-only.
+nvidia-cublas-cu12; sys_platform == "linux"
+nvidia-cudnn-cu12>=9.0; sys_platform == "linux"
+mcp>=1.2  # MCP server exposing generated notes (voice_notes_mcp.py)

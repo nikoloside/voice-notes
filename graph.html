@@ -1,0 +1,147 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta http-equiv="Cache-Control" content="no-store"/>
+<title>Graph Viewer</title>
+<script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+<style>
+:root{--bg:#191921;--ink:#c9d1d9;--line:#30313d;--panel:#21222c}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+  font-family:Inter,system-ui,"Noto Sans CJK JP",sans-serif;overflow:hidden}
+#net{width:100vw;height:100vh}
+#bar{position:fixed;top:0;left:0;right:0;height:42px;background:#161b22ee;
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;
+  padding:0 16px;z-index:6;font-size:13px;backdrop-filter:blur(6px)}
+#bar b{color:#e6edf3}
+#search{margin-left:auto;background:#0d1117;border:1px solid var(--line);
+  color:var(--ink);border-radius:7px;padding:5px 10px;font-size:12px;width:190px}
+#legend{position:fixed;bottom:10px;left:12px;background:#161b22cc;
+  border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:11px;
+  z-index:6;display:flex;gap:12px;flex-wrap:wrap;max-width:90vw}
+#legend i{display:inline-block;width:9px;height:9px;border-radius:50%;
+  margin-right:4px;vertical-align:middle}
+#panel{position:fixed;top:0;right:0;width:330px;max-width:86vw;height:100%;
+  background:var(--panel);border-left:1px solid var(--line);z-index:7;
+  padding:50px 20px 20px;display:none;box-sizing:border-box;overflow-y:auto;
+  box-shadow:-8px 0 30px rgba(0,0,0,.45)}
+.p-close{position:absolute;top:12px;right:14px;cursor:pointer;color:#8b949e;font-size:18px}
+.p-name{font-size:16px;font-weight:700;color:#e6edf3;margin-bottom:4px}
+.p-tag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:10px;
+  background:#30313d;margin:0 4px 8px 0}
+.p-row{font-size:12px;margin:7px 0;line-height:1.5}.p-row b{color:#8b949e;font-weight:600}
+.p-row a{color:#58a6ff}
+#msg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  color:#6e7681;font-size:14px;z-index:5}
+</style></head><body>
+<div id="bar"><b id="title">🕸️ Graph</b><span id="stat" style="color:#8b949e"></span>
+  <input id="search" placeholder="搜索节点…" oninput="doSearch(this.value)"/></div>
+<div id="net"></div>
+<div id="legend"></div>
+<div id="panel"></div>
+<div id="msg">加载中…</div>
+<script>
+// Standalone graph viewer for the shared {nodes,edges} contract:
+//   node: {id, label, type, group?, meta?}   type -> shape, group||type -> color
+//   edge: {from, to, label?, rel?, dashes?}
+// Usage: graph.html?src=<graph-json-url>&title=<title>
+const qs = new URLSearchParams(location.search);
+const SRC = qs.get("src") || "graph.json";
+const TITLE = qs.get("title") || "";
+
+// group/type -> color; unknown groups get a stable hashed color.
+const PALETTE = {
+  session:"#b388ff", person:"#58a6ff", project:"#3fb950", org:"#f0883e",
+  concept:"#39c5cf", decision:"#e85aad", todo:"#d29922"
+};
+const SHAPE = {
+  session:"box", person:"dot", project:"diamond", org:"triangle",
+  concept:"dot", decision:"hexagon", todo:"square"
+};
+function colorFor(g){
+  if(PALETTE[g]) return PALETTE[g];
+  let h=0; for(const c of String(g)) h=(h*31+c.charCodeAt(0))>>>0;
+  return "hsl("+(h%360)+",55%,60%)";
+}
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;");
+let nodes,edges,net,RAW;
+
+(async()=>{
+  if(TITLE){document.getElementById("title").textContent=TITLE;document.title=TITLE;}
+  let data;
+  try{ data = await (await fetch(SRC,{cache:"no-store"})).json(); }
+  catch(e){ document.getElementById("msg").textContent="加载失败: "+SRC; return; }
+  RAW = data;
+  const ns=data.nodes||[], es=data.edges||[];
+  if(!ns.length){document.getElementById("msg").textContent="图谱还是空的。生成一些笔记后再来。";return;}
+  document.getElementById("msg").style.display="none";
+
+  nodes=new vis.DataSet(); edges=new vis.DataSet();
+  const groups=new Set();
+  ns.forEach(n=>{
+    const g=n.group||n.type||"other"; groups.add(g);
+    const mentions=(n.meta&&n.meta.mentions)||1;
+    nodes.add({
+      id:n.id, label:n.label&&n.label.length>18?n.label.slice(0,18)+"…":(n.label||n.id),
+      title:(n.meta&&n.meta.desc)||n.label||"",
+      shape:SHAPE[n.type]||"dot",
+      size:n.type==="session"?20:Math.min(30,12+2*mentions),
+      color:{background:colorFor(g),border:"#e6edf3"},borderWidth:1.5,
+      font:{color:"#e6edf3",size:n.type==="session"?14:12},
+      raw:n
+    });
+  });
+  es.forEach(e=>edges.add({
+    from:e.from,to:e.to,label:e.label||undefined,
+    arrows:e.rel?"to":undefined,
+    dashes:!!e.dashes||!!e.rel,
+    color:{color:e.rel?"#5a6b8c":"#3b3d4a"},
+    font:{size:9,color:"#5a6b8c",strokeWidth:0},width:1
+  }));
+
+  net=new vis.Network(document.getElementById("net"),{nodes,edges},{
+    physics:{stabilization:true,barnesHut:{gravitationalConstant:-9000,springLength:140}},
+    interaction:{hover:true,tooltipDelay:150}});
+  net.on("click",p=>{const id=p.nodes[0];const n=id&&nodes.get(id);
+    if(n&&n.raw) showPanel(n.raw); else hide();});
+  net.on("doubleClick",p=>{const id=p.nodes[0];const n=id&&nodes.get(id);
+    const url=n&&n.raw&&n.raw.meta&&n.raw.meta.url;
+    if(url) window.open(url,"_blank");});
+
+  const sessions=ns.filter(n=>n.type==="session").length;
+  const ents=ns.length-sessions;
+  document.getElementById("stat").textContent=`${sessions} 场会议 · ${ents} 个实体 · ${es.length} 条边`;
+  document.getElementById("legend").innerHTML=[...groups].map(g=>
+    `<span><i style="background:${colorFor(g)}"></i>${esc(g)}</span>`).join("");
+})();
+
+function hide(){document.getElementById("panel").style.display="none";}
+function showPanel(n){
+  const el=document.getElementById("panel");
+  const m=n.meta||{};
+  const rows=[];
+  if(m.desc) rows.push(row("说明",m.desc));
+  if(m.date) rows.push(row("时间",m.date));
+  if(m.duration) rows.push(row("时长",m.duration));
+  if(m.mentions) rows.push(row("被提到",m.mentions+" 次"));
+  for(const k in m){ if(["desc","date","duration","mentions","url"].includes(k))continue;
+    rows.push(row(k,m[k])); }
+  const open=m.url?`<div class="p-row"><a href="${esc(m.url)}" target="_blank">↗ 打开</a></div>`:"";
+  el.innerHTML=`<div class="p-close" onclick="hide()">✕</div>
+    <div class="p-name">${esc(n.label)}</div>
+    <div><span class="p-tag">${esc(n.type||"")}</span>
+      ${n.group&&n.group!==n.type?`<span class="p-tag">${esc(n.group)}</span>`:""}</div>
+    ${rows.join("")}${open}`;
+  el.style.display="block";
+}
+const row=(k,v)=>v?`<div class="p-row"><b>${esc(k)}：</b>${esc(v)}</div>`:"";
+
+function doSearch(q){
+  if(!net||!nodes) return;
+  q=q.trim().toLowerCase();
+  if(!q){nodes.forEach(n=>nodes.update({id:n.id,hidden:false}));return;}
+  const hit=[];
+  nodes.forEach(n=>{const on=(n.raw.label||"").toLowerCase().includes(q);
+    nodes.update({id:n.id,hidden:!on&&n.raw.type!=="session"?false:false});
+    if(on)hit.push(n.id);});
+  if(hit.length){net.selectNodes(hit);net.focus(hit[0],{scale:1.1,animation:true});}
+}
+</script></body></html>
