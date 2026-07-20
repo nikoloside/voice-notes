@@ -1914,15 +1914,60 @@ function md(src){
 }
 """
 
+_I18N_JS = """
+const LANGS=[['zh','中文'],['ja','日本語'],['en','English']];
+const I18N={
+ zh:{tagline:'录音 / 导入 → 转写 → 全文总结 → 一页纸',graph:'🕸️ 知识图谱',
+  start:'● 开始录音',stop:'■ 停止录音',addAudio:'添加音频',upload:'⬆ 上传音频',
+  memos:'🎤 语音备忘录',langTitle:'转写语言；Auto 每段自动识别',
+  delConfirm:'确认删除?',deleting:'删除中…',delTitle:'删除',imported:'已导入 · 打开',
+  import:'导入',importing:'导入中…',noSessions:'还没有记录。开始录音、上传或导入语音备忘录。',
+  loadingMemos:'正在加载语音备忘录…',noMemos:'没有找到语音备忘录。',uploading:'正在上传',
+  uploadFail:'上传失败',couldNotStart:'无法开始',importFail:'导入失败',delFail:'删除失败',
+  allSessions:'← 全部记录',sessionTitle:'会话',transcriptH:'转写',waiting:'等待语音…',
+  stopBtn:'■ 停止',resume:'重新转换',couldNotResume:'无法重新转换',
+  l1:'原始转写',l2:'全文总结',l3:'一页纸',
+  st_recording:'录音中',st_transcribing:'转写中…',st_summarizing:'总结中…',st_done:'完成',st_error:'错误',
+  src_uploaded:'上传',src_memo:'语音备忘录',src_micspk:'麦克风 + 扬声器',src_mic:'麦克风',preparing:'正在准备音频…'},
+ ja:{tagline:'録音 / 取り込み → 文字起こし → 全文要約 → 1ページ',graph:'🕸️ ナレッジグラフ',
+  start:'● 録音開始',stop:'■ 録音停止',addAudio:'音声を追加',upload:'⬆ アップロード',
+  memos:'🎤 ボイスメモ',langTitle:'文字起こし言語；Auto は自動判定',
+  delConfirm:'削除しますか?',deleting:'削除中…',delTitle:'削除',imported:'取り込み済み · 開く',
+  import:'取り込む',importing:'取り込み中…',noSessions:'まだ記録がありません。録音・アップロード・ボイスメモから。',
+  loadingMemos:'ボイスメモを読み込み中…',noMemos:'ボイスメモが見つかりません。',uploading:'アップロード中',
+  uploadFail:'アップロード失敗',couldNotStart:'開始できません',importFail:'取り込み失敗',delFail:'削除に失敗',
+  allSessions:'← すべての記録',sessionTitle:'セッション',transcriptH:'文字起こし',waiting:'音声を待機中…',
+  stopBtn:'■ 停止',resume:'変換を再開',couldNotResume:'再開できません',
+  l1:'生の文字起こし',l2:'全文要約',l3:'1ページ',
+  st_recording:'録音中',st_transcribing:'文字起こし中…',st_summarizing:'要約中…',st_done:'完了',st_error:'エラー',
+  src_uploaded:'アップロード',src_memo:'ボイスメモ',src_micspk:'マイク + スピーカー',src_mic:'マイク',preparing:'音声を準備中…'},
+ en:{tagline:'Record / import → transcript → full summary → one page',graph:'🕸️ Knowledge graph',
+  start:'● Start recording',stop:'■ Stop recording',addAudio:'Add audio',upload:'⬆ Upload audio',
+  memos:'🎤 Voice Memos',langTitle:'Transcription language; Auto detects each chunk',
+  delConfirm:'Delete?',deleting:'Deleting…',delTitle:'Delete',imported:'Imported · Open',
+  import:'Import',importing:'Importing…',noSessions:'No sessions yet. Record, upload, or import a Voice Memo.',
+  loadingMemos:'Loading Voice Memos…',noMemos:'No Voice Memos found.',uploading:'Uploading',
+  uploadFail:'upload failed',couldNotStart:'could not start',importFail:'import failed',delFail:'delete failed',
+  allSessions:'← all sessions',sessionTitle:'Session',transcriptH:'Transcript',waiting:'Waiting for speech…',
+  stopBtn:'■ Stop',resume:'Resume conversion',couldNotResume:'could not resume',
+  l1:'Raw transcript',l2:'Full summary',l3:'One page',
+  st_recording:'Recording',st_transcribing:'Transcribing…',st_summarizing:'Summarizing…',st_done:'Done',st_error:'Error',
+  src_uploaded:'uploaded',src_memo:'Voice Memo',src_micspk:'mic + speakers',src_mic:'mic',preparing:'Preparing audio…'}
+};
+function curLang(){let l=localStorage.getItem('vn_lang');if(!l){const n=(navigator.language||'zh').toLowerCase();l=n.startsWith('ja')?'ja':n.startsWith('en')?'en':'zh';}return I18N[l]?l:'zh';}
+function setLang(l){localStorage.setItem('vn_lang',l);location.reload();}
+function t(k){const d=I18N[curLang()]||I18N.zh;return (k in d)?d[k]:(k in I18N.zh?I18N.zh[k]:k);}
+function langSelect(){const c=curLang();return '<select onchange="setLang(this.value)" title="UI language" style="padding:6px 8px">'+LANGS.map(function(p){return '<option value="'+p[0]+'"'+(p[0]===c?' selected':'')+'>'+p[1]+'</option>';}).join('')+'</select>';}
+"""
+
 _STATUS_JS = """
-const STATUS={recording:['rec','Recording'],transcribing:['sum','Transcribing…'],
-  summarizing:['sum','Summarizing…'],done:['done','Done'],error:['err','Error']};
-function stat(s){return STATUS[s]||['done',s]}
+function stat(s){const m={recording:'rec',transcribing:'sum',summarizing:'sum',done:'done',error:'err'};
+  return [m[s]||'done', t('st_'+s)];}
 function esc(t){return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}
 function lang(){return encodeURIComponent(document.getElementById('lang')?.value||'zh')}
 function progress(d){
   const pct=Math.max(0,Math.min(100,Number(d.progress_percent||0)));
-  const label=esc(d.progress_label||'Preparing audio...');
+  const label=esc(d.progress_label||t('preparing'));
   return `<div class=progline><div class=mut>${label} · ${pct}%</div><div class=prog><i style="width:${pct}%"></i></div></div>`;
 }
 """
@@ -1932,15 +1977,16 @@ _INDEX_HTML = """<!doctype html><meta charset=utf-8>
 <title>voice-notes</title><style>__CSS__</style>
 <div class=wrap>
  <div class=row><div><h1>🎙️ voice-notes</h1>
-  <div class=mut>Record or import audio → transcript → full summary → one page</div></div>
+  <div class=mut id=tagline></div></div>
   <div style="display:flex;gap:10px;align-items:center">
-   <a class=b2 href="/graph" target="_blank"
-     style="padding:9px 16px;border-radius:9px;border:1px solid var(--line)">🕸️ 知识图谱</a>
-   <button id=btn onclick=toggle()>● Start recording</button></div></div>
+   <span id=uilang></span>
+   <a class=b2 id=graphlink href="/graph" target="_blank"
+     style="padding:9px 16px;border-radius:9px;border:1px solid var(--line)"></a>
+   <button id=btn onclick=toggle()></button></div></div>
  <div class=card><div class=row>
-   <b>Add audio</b>
+   <b id=addAudioLabel></b>
    <div>
-    <select id=lang title="Transcription language; Auto detects each chunk">
+    <select id=lang>
       <option value="zh" selected>中文</option>
       <option value="auto">Auto</option>
       <option value="en">English</option>
@@ -1948,21 +1994,30 @@ _INDEX_HTML = """<!doctype html><meta charset=utf-8>
     </select>
     <input type=file id=file accept="audio/*,.m4a,.mp3,.wav,.aac,.flac,.ogg,.mp4"
       style=display:none onchange=upload(this)>
-    <button class=b2 onclick="document.getElementById('file').click()">⬆ Upload audio</button>
-    <button class=b2 onclick=loadMemos()>🎤 Voice Memos</button>
+    <button class=b2 id=uploadBtn onclick="document.getElementById('file').click()"></button>
+    <button class=b2 id=memosBtn onclick=loadMemos()></button>
    </div></div>
   <div id=upmsg class=mut></div>
   <div id=memos></div>
  </div>
  <div id=list></div>
 </div>
-<script>__MDJS__ __STATUSJS__
+<script>__MDJS__ __I18NJS__ __STATUSJS__
+function applyStatic(){
+  document.getElementById('tagline').textContent=t('tagline');
+  document.getElementById('graphlink').textContent=t('graph');
+  document.getElementById('addAudioLabel').textContent=t('addAudio');
+  document.getElementById('uploadBtn').textContent=t('upload');
+  document.getElementById('memosBtn').textContent=t('memos');
+  document.getElementById('lang').title=t('langTitle');
+  document.getElementById('uilang').innerHTML=langSelect();
+}
 let live=null;
 async function refresh(){
   const r=await fetch('/api/sessions');const d=await r.json();
   live=d.find(s=>s.status==='recording')||null;
   const btn=document.getElementById('btn');
-  btn.textContent=live?'■ Stop recording':'● Start recording';
+  btn.textContent=live?t('stop'):t('start');
   btn.className=live?'stop':'';
   document.getElementById('list').innerHTML=d.map(s=>{
     const [cls,lab]=stat(s.status);
@@ -1971,62 +2026,62 @@ async function refresh(){
       <div><b>${icon}${esc(s.title)}</b><div class=mut>${s.started.replace('T',' ')} · ${s.duration}</div></div>
       <div style="display:flex;align-items:center;gap:4px">
         <span class="pill ${cls}"><span class=dot></span>${lab}</span>
-        <span class=del onclick="del(event,'${s.id}')" title="删除">🗑</span>
+        <span class=del onclick="del(event,'${s.id}')" title="${t('delTitle')}">🗑</span>
       </div></div>${progress(s)}</a>`;
-  }).join('')||'<div class="card mut">No sessions yet. Record, upload, or import a Voice Memo.</div>';
+  }).join('')||`<div class="card mut">${t('noSessions')}</div>`;
 }
 async function toggle(){
   if(live){await fetch('/api/stop',{method:'POST'});refresh();}
   else{const r=await fetch('/api/start?language='+lang(),{method:'POST'});const d=await r.json();
-    if(d.id)location='/s/'+d.id; else alert(d.error||'could not start');}
+    if(d.id)location='/s/'+d.id; else alert(d.error||t('couldNotStart'));}
 }
 async function del(ev,id){
   ev.preventDefault();ev.stopPropagation();
   const el=ev.currentTarget;
   if(el.dataset.armed!=='1'){                 // first click: arm, auto-disarm in 3s
-    el.dataset.armed='1';el.textContent='确认删除?';el.classList.add('arm');
+    el.dataset.armed='1';el.textContent=t('delConfirm');el.classList.add('arm');
     clearTimeout(el._t);
     el._t=setTimeout(()=>{el.dataset.armed='';el.textContent='🗑';el.classList.remove('arm');},3000);
     return;
   }
-  clearTimeout(el._t);el.textContent='删除中…';
+  clearTimeout(el._t);el.textContent=t('deleting');
   const r=await fetch('/api/delete',{method:'POST',
     headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
   const j=await r.json();
-  if(j.ok){refresh();} else {el.textContent='🗑';el.dataset.armed='';el.classList.remove('arm');alert(j.error||'删除失败');}
+  if(j.ok){refresh();} else {el.textContent='🗑';el.dataset.armed='';el.classList.remove('arm');alert(j.error||t('delFail'));}
 }
 async function upload(inp){
   const f=inp.files[0];if(!f)return;
-  document.getElementById('upmsg').textContent='Uploading '+f.name+'…';
+  document.getElementById('upmsg').textContent=t('uploading')+' '+f.name+'…';
   const r=await fetch('/api/upload?name='+encodeURIComponent(f.name)+'&language='+lang(),
     {method:'POST',body:f});
   const d=await r.json();
   if(d.id)location='/s/'+d.id;
-  else document.getElementById('upmsg').textContent=d.error||'upload failed';
+  else document.getElementById('upmsg').textContent=d.error||t('uploadFail');
   inp.value='';
 }
 async function loadMemos(){
   const el=document.getElementById('memos');
-  el.innerHTML='<p class=mut>Loading Voice Memos…</p>';
+  el.innerHTML='<p class=mut>'+t('loadingMemos')+'</p>';
   const r=await fetch('/api/voicememos');const d=await r.json();
   if(d.error){el.innerHTML='<p class=mut>'+esc(d.error)+'</p>';return}
   el.innerHTML=d.items.map((m,i)=>{
     const meta=`<span class=mut>${m.date}${m.duration?' · '+m.duration:''}</span>`;
     const right=m.sid
-      ? `<a class="pill done" href="/s/${m.sid}"><span class=dot></span>已导入 · 打开</a>`
-      : `<button onclick=imp(${i},this)>Import</button>`;
+      ? `<a class="pill done" href="/s/${m.sid}"><span class=dot></span>${t('imported')}</a>`
+      : `<button onclick=imp(${i},this)>${t('import')}</button>`;
     return `<div class=memo><div><b>${esc(m.title)}</b> ${meta}</div>${right}</div>`;
-  }).join('')||'<p class=mut>No Voice Memos found.</p>';
+  }).join('')||`<p class=mut>${t('noMemos')}</p>`;
 }
 async function imp(i,btn){
-  btn.disabled=true;btn.textContent='Importing…';
+  btn.disabled=true;btn.textContent=t('importing');
   const r=await fetch('/api/voicememos/import',{method:'POST',
     headers:{'Content-Type':'application/json'},body:JSON.stringify({i,language:document.getElementById('lang').value})});
   const d=await r.json();
   if(d.id)location='/s/'+d.id;
-  else{alert(d.error||'import failed');btn.disabled=false;btn.textContent='Import';}
+  else{alert(d.error||t('importFail'));btn.disabled=false;btn.textContent=t('import');}
 }
-refresh();setInterval(refresh,2000);
+applyStatic();refresh();setInterval(refresh,2000);
 </script>"""
 
 _SESSION_HTML = """<!doctype html><meta charset=utf-8>
@@ -2034,21 +2089,22 @@ _SESSION_HTML = """<!doctype html><meta charset=utf-8>
 <title>notes __SID__</title><style>__CSS__</style>
 <div class=wrap>
  <div class=row><div>
-   <div class=mut><a href=/>← all sessions</a></div>
-   <h1 id=title>Session</h1><div class=mut id=sub></div></div>
+   <div class=mut><a id=backlink href=/></a></div>
+   <h1 id=title></h1><div class=mut id=sub></div></div>
   <div style="text-align:right">
+   <div id=uilang style="margin-bottom:8px"></div>
    <div id=pill class=pill><span class=dot></span><span id=plabel>…</span></div><br>
    <button id=stop class=stop style="margin-top:8px;display:none"
-     onclick="fetch('/api/stop',{method:'POST'})">■ Stop</button>
+     onclick="fetch('/api/stop',{method:'POST'})"></button>
    <button id=resume class=b2 style="margin-top:8px;display:none"
-     onclick="resumeImport()">Resume conversion</button>
+     onclick="resumeImport()"></button>
   </div></div>
  <div id=progress></div>
  <div class=card id=errcard style="display:none;color:var(--rec)"></div>
  <div class=pipeline>
-   <div id=st1 class=stage onclick="jump(1)"><b>Layer 1</b>Raw transcript</div>
-   <div id=st2 class=stage onclick="jump(2)"><b>Layer 2</b>Full summary</div>
-   <div id=st3 class=stage onclick="jump(3)"><b>Layer 3</b>One page</div>
+   <div id=st1 class=stage onclick="jump(1)"><b>Layer 1</b><span id=l1lab></span></div>
+   <div id=st2 class=stage onclick="jump(2)"><b>Layer 2</b><span id=l2lab></span></div>
+   <div id=st3 class=stage onclick="jump(3)"><b>Layer 3</b><span id=l3lab></span></div>
  </div>
  <div class=card id=notescard style=display:none><div id=notes class=md></div>
   <div class=files style="margin-top:10px">
@@ -2058,12 +2114,23 @@ _SESSION_HTML = """<!doctype html><meta charset=utf-8>
    <a href="/f/__SID__/summary.md" download>⬇ summary.md</a>
    <a href="/f/__SID__/transcript.md" download>⬇ transcript.md</a>
    <a href="/f/__SID__/audio.wav" download>⬇ audio.wav</a></div></div>
- <h2>Transcript</h2>
+ <h2 id=transcriptH></h2>
  <div class="card tr"><div id=transcript class=md>
-   <p class=mut>Waiting for speech…</p></div></div>
+   <p class=mut id=waitmsg></p></div></div>
 </div>
-<script>__MDJS__ __STATUSJS__
+<script>__MDJS__ __I18NJS__ __STATUSJS__
 const sid=__SIDJS__;let last='',lastNotes='';
+function applyStatic(){
+  document.getElementById('uilang').innerHTML=langSelect();
+  document.getElementById('backlink').textContent=t('allSessions');
+  document.getElementById('stop').textContent=t('stopBtn');
+  document.getElementById('resume').textContent=t('resume');
+  document.getElementById('l1lab').textContent=t('l1');
+  document.getElementById('l2lab').textContent=t('l2');
+  document.getElementById('l3lab').textContent=t('l3');
+  document.getElementById('transcriptH').textContent=t('transcriptH');
+  document.getElementById('waitmsg').textContent=t('waiting');
+}
 function stages(s,hasTranscript,hasNotes){
   document.getElementById('st1').className='stage '+(hasTranscript?'on':'');
   document.getElementById('st2').className='stage '+(hasNotes?'on':'');
@@ -2085,15 +2152,15 @@ function jump(n){
     scrollToEl(card);return;
   }
   // Layer 1 with no notes yet -> the live transcript card.
-  const t=document.getElementById('transcript');
-  if(t)scrollToEl(t.closest('.card'));
+  const tr=document.getElementById('transcript');
+  if(tr)scrollToEl(tr.closest('.card'));
 }
 async function refresh(){
   const r=await fetch('/api/s/'+sid);if(!r.ok)return;const d=await r.json();
-  document.getElementById('title').textContent=d.title||'Session';
+  document.getElementById('title').textContent=d.title||t('sessionTitle');
   document.getElementById('sub').textContent=d.started.replace('T',' ')+' · '+d.duration+
-    (d.source==='upload'?' · uploaded':d.source==='memo'?' · Voice Memo':
-     d.system_audio?' · mic + speakers':' · mic');
+    ' · '+(d.source==='upload'?t('src_uploaded'):d.source==='memo'?t('src_memo'):
+     d.system_audio?t('src_micspk'):t('src_mic'));
   document.getElementById('progress').innerHTML=progress(d);
   const [cls,lab]=stat(d.status);
   document.getElementById('pill').className='pill '+cls;
@@ -2111,7 +2178,7 @@ async function refresh(){
     const el=document.getElementById('transcript');
     const box=el.parentElement;
     const stick=box.scrollTop+box.clientHeight>=box.scrollHeight-40;
-    el.innerHTML=md(d.transcript)||'<p class=mut>Waiting for speech…</p>';
+    el.innerHTML=md(d.transcript)||('<p class=mut>'+t('waiting')+'</p>');
     if(stick)box.scrollTop=box.scrollHeight;}
   if(d.summary){document.getElementById('sumcard').style.display='';
     document.getElementById('summary').innerHTML=md(d.summary);}
@@ -2121,16 +2188,17 @@ async function resumeImport(){
   const r=await fetch('/api/resume',{method:'POST',
     headers:{'Content-Type':'application/json'},body:JSON.stringify({sid})});
   const d=await r.json();
-  if(!d.id)alert(d.error||'could not resume');
+  if(!d.id)alert(d.error||t('couldNotResume'));
   refresh();
 }
-refresh();
+applyStatic();refresh();
 </script>"""
 
 
 def _render(template: str, **tokens) -> str:
     out = template.replace("__CSS__", _PAGE_CSS) \
                   .replace("__MDJS__", _MD_JS) \
+                  .replace("__I18NJS__", _I18N_JS) \
                   .replace("__STATUSJS__", _STATUS_JS)
     for k, v in tokens.items():
         out = out.replace(f"__{k.upper()}__", v)

@@ -1,5 +1,13 @@
 # voice-notes
 
+![license](https://img.shields.io/badge/license-MIT-blue.svg)
+![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
+![100% local](https://img.shields.io/badge/100%25-local%20%2F%20offline-brightgreen.svg)
+![whisper](https://img.shields.io/badge/ASR-faster--whisper-orange.svg)
+![MCP](https://img.shields.io/badge/MCP-server-8A2BE2.svg)
+![i18n](https://img.shields.io/badge/i18n-中文%20%7C%20日本語%20%7C%20English-ff69b4.svg)
+![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)
+
 Standalone local audio notes extracted from `type-by-voice`.
 
 This tool records or imports audio, transcribes it locally with
