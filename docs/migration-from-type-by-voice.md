@@ -43,7 +43,7 @@ own global hotkeys.
 The reusable notes implementation was copied from:
 
 ```text
-/Users/yuhanghuang/Workspaces/tools/type-by-voice/voice_notes.py
+type-by-voice/voice_notes.py
 ```
 
 The new standalone wrapper copies the model loading and transcription bridge

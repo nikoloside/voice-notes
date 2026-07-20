@@ -19,7 +19,7 @@ focused app. Those remain the responsibility of `type-by-voice`.
 Requires Python 3.11+.
 
 ```bash
-cd /Users/yuhanghuang/Workspaces/tools/voice-notes
+cd voice-notes
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
@@ -102,12 +102,12 @@ their relations from the notes, cached in the session's `entities.json`.
 `/api/graph` aggregates every session's `entities.json` into one graph — each
 entity is merged across sessions by name, so a project or person that recurs
 becomes a hub linking all the meetings that mention it. The graph is served in
-a generic `{nodes, edges}` contract (see `../../10.coc-proj/Ludic-Dynamics/graph-viewer/README.md`).
+a generic `{nodes, edges}` contract, rendered by the bundled `graph.html`
+viewer (which can be reused for any data source that speaks the same contract).
 
 Open **🕸️ 知识图谱** on the home page (or `/graph`) for an interactive
 force-directed view: click a node for details, double-click a session node to
-open it, search to focus. The viewer is the shared standalone `graph-viewer`,
-not a bespoke one — the Cockpit VC graph renders through the same viewer.
+open it, search to focus.
 
 Backfill entities for existing sessions (they were made before this pass):
 
@@ -154,8 +154,8 @@ Add it to **Claude Desktop** (`~/Library/Application Support/Claude/claude_deskt
 
 It reads the same data dir as the app; override with `--data-dir DIR` or the
 `VOICE_NOTES_DATA_DIR` env var. Then ask Claude things like “list my voice
-notes”, “read the one-page summary of the 07-13 Worldlines meeting”, or
-“search my notes for 服务器”.
+notes”, “read the one-page summary of yesterday’s meeting”, or “search my
+notes for a keyword”.
 
 ## Configuration
 

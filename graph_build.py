@@ -6,8 +6,8 @@ session's meta.json + entities.json off disk and merges them into the shared
 {nodes, edges} contract (see graph-viewer/README.md).
 
 Two kinds of merging make the graph less fragmented:
-  1. Meeting grouping — recordings that are parts of one meeting ("牧尧 - 1",
-     "牧尧 - 2", …) collapse into a single meeting node.
+  1. Meeting grouping — recordings that are parts of one meeting ("Meeting - 1",
+     "Meeting - 2", …) collapse into a single meeting node.
   2. Entity aliasing — an optional graph_aliases.json ({alias: canonical})
      merges different names for the same entity/topic. It is produced by an
      LLM pass in voice_notes.py; if absent, entities merge by exact name only.
