@@ -1,5 +1,7 @@
 # voice-notes
 
+**English** · [中文](README.zh.md) · [日本語](README.ja.md)
+
 ![license](https://img.shields.io/badge/license-MIT-blue.svg)
 ![python](https://img.shields.io/badge/python-3.11%2B-blue.svg)
 ![100% local](https://img.shields.io/badge/100%25-local%20%2F%20offline-brightgreen.svg)
@@ -13,7 +15,8 @@
 > Home → a meeting's 3-layer summary → the cross-meeting knowledge graph.
 > _(Shown with placeholder demo data.)_
 
-Standalone local audio notes extracted from `type-by-voice`.
+Standalone local audio notes extracted from
+[`type-by-voice`](https://github.com/kotaro-nakata/type-by-voice).
 
 This tool records or imports audio, transcribes it locally with
 `faster-whisper`, and writes:
@@ -25,7 +28,8 @@ This tool records or imports audio, transcribes it locally with
 - `meta.json`
 
 It does not do global push-to-talk dictation, tray UI, or paste text into the
-focused app. Those remain the responsibility of `type-by-voice`.
+focused app. Those remain the responsibility of
+[`type-by-voice`](https://github.com/kotaro-nakata/type-by-voice).
 
 ## Setup
 
