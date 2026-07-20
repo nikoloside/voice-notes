@@ -681,21 +681,44 @@ class Summarizer:
 
     # A single pass handles up to this many transcript characters; longer
     # transcripts are split into blocks of _BLOCK_CHARS, summarized, merged.
-    _SINGLE_PASS_CHARS = 28000
-    _BLOCK_CHARS = 14000
+    # Sized to fit small server context windows (LM Studio defaults are often
+    # only a few k tokens); a block that still overflows is auto-split further.
+    _SINGLE_PASS_CHARS = 9000
+    _BLOCK_CHARS = 8000
+    _MIN_BLOCK_CHARS = 1500
+
+    def _summarize_chunk(self, text: str, depth: int = 0) -> str:
+        """Summarize one transcript block; if the server rejects it for being
+        too long (HTTP 400 context overflow), split in half and merge."""
+        try:
+            return self._generate(
+                _FULL_SUMMARY_PROMPT.format(transcript=text), num_ctx=16384)
+        except Exception as e:
+            too_long = "400" in str(e) or "context" in str(e).lower()
+            if not (too_long and depth < 4 and len(text) > self._MIN_BLOCK_CHARS):
+                raise
+            mid = text.rfind("\n", 0, len(text) // 2)
+            if mid <= 0:
+                mid = len(text) // 2
+            print(f"[notes] block too long, splitting ({len(text)} chars)")
+            a = self._summarize_chunk(text[:mid], depth + 1)
+            b = self._summarize_chunk(text[mid:], depth + 1)
+            got = [p for p in (a, b) if p]
+            if len(got) <= 1:
+                return got[0] if got else ""
+            return self._generate(
+                _MERGE_PROMPT.format(parts="\n\n".join(got)), num_ctx=16384)
 
     def full_summary(self, transcript: str) -> str:
         """Layer 2: one detailed summary of the WHOLE transcript.
 
-        Long transcripts are split into large blocks internally (invisible in
-        the output) so the model context is never overflowed."""
+        Long transcripts are split into blocks internally (invisible in the
+        output) so the model context is never overflowed."""
         transcript = transcript.strip()
         if not transcript:
             return ""
         if len(transcript) <= self._SINGLE_PASS_CHARS:
-            return self._generate(
-                _FULL_SUMMARY_PROMPT.format(transcript=transcript),
-                num_ctx=32768)
+            return self._summarize_chunk(transcript)
         lines = transcript.splitlines()
         blocks, cur, cur_len = [], [], 0
         for line in lines:
@@ -709,8 +732,7 @@ class Summarizer:
         parts = []
         for i, block in enumerate(blocks, 1):
             print(f"[notes] Layer 2: summarizing part {i}/{len(blocks)}...")
-            part = self._generate(
-                _FULL_SUMMARY_PROMPT.format(transcript=block), num_ctx=16384)
+            part = self._summarize_chunk(block)
             if part:
                 parts.append(f"（第 {i}/{len(blocks)} 部分）\n{part}")
         if not parts:

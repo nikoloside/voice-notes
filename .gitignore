@@ -15,3 +15,20 @@ __pycache__/
 .idea/
 *.swp
 .DS_Store
+
+# Session data & runtime artifacts — data lives in ~/.local/share/voice-notes
+# and ~/.config/voice-notes by default; these patterns are a safety net in case
+# a data dir is ever pointed inside the repo.
+sessions/
+_uploads/
+*.wav
+*.m4a
+meta.json
+chunks.json
+entities.json
+graph_aliases.json
+transcript.md
+notes.md
+summary.md
+summary.md.bak
+config.toml
