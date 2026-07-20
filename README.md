@@ -8,6 +8,11 @@
 ![i18n](https://img.shields.io/badge/i18n-中文%20%7C%20日本語%20%7C%20English-ff69b4.svg)
 ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)
 
+![demo](docs/demo.gif)
+
+> Home → a meeting's 3-layer summary → the cross-meeting knowledge graph.
+> _(Shown with placeholder demo data.)_
+
 Standalone local audio notes extracted from `type-by-voice`.
 
 This tool records or imports audio, transcribes it locally with
