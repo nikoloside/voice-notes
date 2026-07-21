@@ -935,13 +935,15 @@ class NotesSession:
                  summarizer: Summarizer, capture_system: bool = True,
                  keep_audio: bool = True, on_done=None,
                  min_chunk_sec: float | None = None,
-                 max_chunk_sec: float | None = None):
+                 max_chunk_sec: float | None = None,
+                 language: str = "zh"):
         self.id = datetime.now().strftime("%Y%m%d-%H%M%S")
         self.dir = base_dir / self.id
         self.dir.mkdir(parents=True, exist_ok=True)
         self.sample_rate = sample_rate
         self.transcribe_fn = transcribe_fn   # (float32 ndarray) -> str
         self.summarizer = summarizer
+        self.language = language if language in ("zh", "ja", "en", "auto") else "zh"
         self.on_done = on_done               # called with self when summary.md exists
         if min_chunk_sec is not None:
             self.MIN_CHUNK_SEC = float(min_chunk_sec)
@@ -1097,7 +1099,7 @@ class NotesSession:
             self.summarizer, transcript)
         self._write_notes()
         try:
-            body = _summary_body(self._llm_layer2, self._llm_final) \
+            body = _summary_body(self._llm_layer2, self._llm_final, self.language) \
                 or self.summarizer.summarize(transcript)
         except Exception as e:
             body = f"## Summary\n(Summarization failed: {e})"
@@ -1156,6 +1158,7 @@ class NotesSession:
             source=source,
             llm_layer2=self._llm_layer2,
             llm_final=self._llm_final,
+            language=self.language,
         )
 
     def _write_transcript(self):
@@ -1192,6 +1195,7 @@ class NotesSession:
             "title": self.title(),
             "system_audio": self.system_audio,
             "source": "live",
+            "language": self.language,
         }
         try:
             (self.dir / "meta.json").write_text(json.dumps(meta, ensure_ascii=False))
@@ -1219,7 +1223,8 @@ class ImportSession:
                  title: str, transcribe_segments_fn, summarizer: Summarizer,
                  source: str = "upload", on_done=None,
                  chunk_target: float = 30.0, chunk_radius: float = 5.0,
-                 session_id: str | None = None, resume: bool = False):
+                 session_id: str | None = None, resume: bool = False,
+                 language: str = "zh"):
         self.id = session_id or datetime.now().strftime("%Y%m%d-%H%M%S")
         while not session_id and (base_dir / self.id).exists():
             self.id += "0"
@@ -1231,6 +1236,7 @@ class ImportSession:
         self.transcribe_segments_fn = transcribe_segments_fn  # audio -> [(s, text)]
         self.summarizer = summarizer
         self.source = source
+        self.language = language if language in ("zh", "ja", "en", "auto") else "zh"
         self.on_done = on_done
         self.chunk_target = chunk_target
         self.chunk_radius = chunk_radius
@@ -1313,7 +1319,7 @@ class ImportSession:
             self._llm_layer2, self._llm_final = _layered_summaries(
                 self.summarizer, transcript)
             self._write_notes()
-            body = _summary_body(self._llm_layer2, self._llm_final) \
+            body = _summary_body(self._llm_layer2, self._llm_final, self.language) \
                 or self.summarizer.summarize(transcript)
             started = datetime.fromtimestamp(self.started).strftime("%Y-%m-%d %H:%M")
             head = (f"# {self.name}\n\n"
@@ -1369,6 +1375,7 @@ class ImportSession:
             error=self.error,
             llm_layer2=self._llm_layer2,
             llm_final=self._llm_final,
+            language=self.language,
         )
 
     def _write_transcript(self):
@@ -1412,6 +1419,7 @@ class ImportSession:
                 if r.get("status") == "done"
             ),
             "error": self.error,
+            "language": self.language,
         }
         try:
             (self.dir / "meta.json").write_text(json.dumps(meta, ensure_ascii=False))
@@ -1706,13 +1714,18 @@ def _section_notes(sections: list[dict]) -> list[dict]:
     return [_section_note(section) for section in sections]
 
 
-def _final_note_from_sections(notes: list[dict], status: str) -> list[str]:
+def _final_note_from_sections(notes: list[dict], status: str, language: str = "zh") -> list[str]:
+    labels = {
+        "ja": ("Layer 2の分割要約を待っています。", "現在のノート案", "重要な内容", "明確なToDoはありません。", "確認事項はありません。", "処理中です。後続チャンクの完了後に更新されます。"),
+        "en": ("Waiting for the Layer 2 section summaries.", "Current note draft", "Valuable content", "No explicit to-dos.", "No explicit checkpoints.", "Processing continues; this will update after later chunks finish."),
+        "zh": ("等待 Layer 2 形成分段摘要后生成完整 note。", "当前完整 Note 草稿", "有价值内容", "暂无明确待办。", "暂无明确检查点。", "还在处理中，后续 chunk 完成后这里会继续合并更新。"),
+    }.get(language) or ("等待 Layer 2 形成分段摘要后生成完整 note。", "当前完整 Note 草稿", "有价值内容", "暂无明确待办。", "暂无明确检查点。", "还在处理中，后续 chunk 完成后这里会继续合并更新。")
     if not notes:
-        return ["等待 Layer 2 形成分段摘要后生成完整 note。"]
+        return [labels[0]]
     lines = []
-    lines.append("### 当前完整 Note 草稿")
+    lines.append("### " + labels[1])
     lines.append("")
-    lines.append("**有价值内容**")
+    lines.append("**" + labels[2] + "**")
     valuable_items = []
     for note in notes[:8]:
         valuable_items.extend(note.get("valuable", [])[:2])
@@ -1730,16 +1743,16 @@ def _final_note_from_sections(notes: list[dict], status: str) -> list[str]:
     if todos:
         lines += [f"- [ ] {item}" for item in _dedupe(todos)[:10]]
     else:
-        lines.append("- 暂无明确待办。")
+        lines.append("- " + labels[3])
 
     lines += ["", "**Checkpoints**"]
     if checkpoints:
         lines += [f"- {item}" for item in _dedupe(checkpoints)[:10]]
     else:
-        lines.append("- 暂无明确检查点。")
+        lines.append("- " + labels[4])
 
     if status not in ("done", "error"):
-        lines += ["", "> 还在处理中，后续 chunk 完成后这里会继续合并更新。"]
+        lines += ["", "> " + labels[5]]
     return lines
 
 
@@ -1752,7 +1765,7 @@ def _dedupe(items: list[str]) -> list[str]:
     return out
 
 
-def _summary_body(layer2: str, layer3: str) -> str:
+def _summary_body(layer2: str, layer3: str, language: str = "zh") -> str:
     """summary.md body: the one-page note first, full summary after it."""
     if not layer2 and not layer3:
         return ""
@@ -1760,64 +1773,94 @@ def _summary_body(layer2: str, layer3: str) -> str:
     if layer3:
         parts.append(layer3)
     if layer2:
-        parts += ["", "---", "", "# 详细总结（Layer 2）", "", layer2]
+        heading = {"ja": "# 全文要約（Layer 2）", "en": "# Full summary (Layer 2)"}.get(language, "# 详细总结（Layer 2）")
+        parts += ["", "---", "", heading, "", layer2]
     return "\n".join(parts).strip()
 
 
+_NOTES_TEXT = {
+    "zh": {
+        "running": "运行中的笔记", "layer1": "原始转写片段", "layer2": "全文总结", "layer3": "一页纸",
+        "status_recording": "正在录音和转写", "status_transcribing": "正在逐段转写",
+        "status_summarizing": "正在生成最终摘要", "status_done": "已完成", "status_error": "失败",
+        "wait_first": "等待第一段语音转写完成。", "summarizing_l2": "Layer 1 已完成，正在用本地 LLM 生成全文总结…",
+        "wait_l2": "等待 Layer 1 全部转写完成后，一次性生成全文总结。", "overview": "主要讲什么",
+        "points": "核心逻辑点", "heuristic": "_（规则抽取版；启动 Ollama 后重跑可得到 LLM 全文总结。）_",
+        "empty": "（没有可总结的内容。）", "summarizing_l3": "等 Layer 2 全文总结完成后，再精简成一页纸。",
+        "wait_l3": "等待 Layer 2 完成后生成一页纸总结。",
+    },
+    "ja": {
+        "running": "作成中のノート", "layer1": "生の文字起こし", "layer2": "全文要約", "layer3": "1ページ要約",
+        "status_recording": "録音・文字起こし中", "status_transcribing": "文字起こし中",
+        "status_summarizing": "最終要約を作成中", "status_done": "完了", "status_error": "エラー",
+        "wait_first": "最初の音声の文字起こしを待っています。", "summarizing_l2": "Layer 1が完了しました。ローカルLLMで全文要約を作成しています…",
+        "wait_l2": "Layer 1の文字起こしがすべて完了すると、全文要約を作成します。", "overview": "主な内容",
+        "points": "要点", "heuristic": "_（ルールベースの抽出版です。Ollamaを起動して再実行すると、LLMによる全文要約を生成できます。）_",
+        "empty": "（要約できる内容がありません。）", "summarizing_l3": "Layer 2の全文要約が完了すると、1ページにまとめます。",
+        "wait_l3": "Layer 2の完了後に1ページ要約を作成します。",
+    },
+    "en": {
+        "running": "Running notes", "layer1": "Raw transcript chunks", "layer2": "Full summary", "layer3": "One page",
+        "status_recording": "Recording and transcribing", "status_transcribing": "Transcribing",
+        "status_summarizing": "Creating final summary", "status_done": "Done", "status_error": "Error",
+        "wait_first": "Waiting for the first audio transcript.", "summarizing_l2": "Layer 1 is complete. Creating the full summary with the local LLM…",
+        "wait_l2": "The full summary will be created after all of Layer 1 is transcribed.", "overview": "Overview",
+        "points": "Key points", "heuristic": "_(Rule-based extraction; rerun with Ollama for an LLM full summary.)_",
+        "empty": "(There is no content to summarize.)", "summarizing_l3": "The one-page note will be created after the Layer 2 summary.",
+        "wait_l3": "The one-page summary will be created after Layer 2 is complete.",
+    },
+}
+
 def _running_notes_md(title: str, segments: list[tuple[float, str]], status: str,
                       duration: str = "", source: str = "", error: str = "",
-                      llm_layer2: str = "", llm_final: str = "") -> str:
-    status_label = {
-        "recording": "正在录音和转写",
-        "transcribing": "正在逐段转写",
-        "summarizing": "正在生成最终摘要",
-        "done": "已完成",
-        "error": "失败",
-    }.get(status, status)
+                      llm_layer2: str = "", llm_final: str = "",
+                      language: str = "zh") -> str:
+    strings = _NOTES_TEXT.get(language, _NOTES_TEXT["zh"])
+    status_label = strings.get("status_" + status, status)
     meta = " · ".join(x for x in (duration, source, status_label) if x)
-    lines = [f"# Running notes — {title}", f"_{meta}_", ""]
+    lines = [f"# {strings['running']} — {title}", f"_{meta}_", ""]
     if error:
         lines += [f"> {error}", ""]
 
-    lines += ["## Layer 1 · Raw transcript chunks"]
+    lines += ["## Layer 1 · " + strings['layer1']]
     if segments:
         lines += [f"- **[{_fmt_ts(t)}]** {text}" for t, text in segments]
     else:
-        lines += ["等待第一段语音转写完成。"]
+        lines += [strings['wait_first']]
 
-    lines += ["", "## Layer 2 · Full summary"]
+    lines += ["", "## Layer 2 · " + strings['layer2']]
     if llm_layer2:
         lines.append(llm_layer2)
     elif status == "summarizing":
-        lines.append("Layer 1 已完成，正在用本地 LLM 生成全文总结…")
+        lines.append(strings['summarizing_l2'])
     elif status not in ("done", "error"):
-        lines.append("等待 Layer 1 全部转写完成后，一次性生成全文总结。")
+        lines.append(strings['wait_l2'])
     else:
         # No LLM available: fall back to the heuristic section digest.
         sections = _sections_from_segments(segments)
         notes = _section_notes(sections)
         for i, note in enumerate(notes, 1):
             lines.append(f"### {i}. {_fmt_ts(note['start'])}")
-            lines.append(f"- **主要讲什么:** {note['overview']}")
+            lines.append(f"- **{strings['overview']}:** {note['overview']}")
             if note["points"]:
-                lines.append("- **核心逻辑点:**")
+                lines.append(f"- **{strings['points']}:**")
                 lines += [f"  {idx}. {point}"
                           for idx, point in enumerate(note["points"], 1)]
         if notes:
-            lines.append("_（规则抽取版；启动 Ollama 后重跑可得到 LLM 全文总结。）_")
+            lines.append(strings['heuristic'])
         else:
-            lines.append("（没有可总结的内容。）")
+            lines.append(strings['empty'])
 
-    lines += ["", "## Layer 3 · One page"]
+    lines += ["", "## Layer 3 · " + strings['layer3']]
     if llm_final:
         lines.append(llm_final)
     elif status == "summarizing":
-        lines.append("等 Layer 2 全文总结完成后，再精简成一页纸。")
+        lines.append(strings['summarizing_l3'])
     elif status not in ("done", "error"):
-        lines.append("等待 Layer 2 完成后生成一页纸总结。")
+        lines.append(strings['wait_l3'])
     else:
         sections = _sections_from_segments(segments)
-        lines += _final_note_from_sections(_section_notes(sections), status)
+        lines += _final_note_from_sections(_section_notes(sections), status, language)
     return "\n".join(lines) + "\n"
 
 
@@ -1955,8 +1998,10 @@ const I18N={
   src_uploaded:'uploaded',src_memo:'Voice Memo',src_micspk:'mic + speakers',src_mic:'mic',preparing:'Preparing audio…'}
 };
 function curLang(){let l=localStorage.getItem('vn_lang');if(!l){const n=(navigator.language||'zh').toLowerCase();l=n.startsWith('ja')?'ja':n.startsWith('en')?'en':'zh';}return I18N[l]?l:'zh';}
-function setLang(l){localStorage.setItem('vn_lang',l);location.reload();}
+function setLang(l){localStorage.setItem('vn_lang',l);if(!localStorage.getItem('vn_transcription_explicit'))localStorage.setItem('vn_transcription_lang',l);location.reload();}
 function t(k){const d=I18N[curLang()]||I18N.zh;return (k in d)?d[k]:(k in I18N.zh?I18N.zh[k]:k);}
+function transcriptionLang(){return localStorage.getItem('vn_transcription_lang')||curLang();}
+function setTranscriptionLang(l){localStorage.setItem('vn_transcription_lang',l);localStorage.setItem('vn_transcription_explicit','1');}
 function langSelect(){const c=curLang();return '<select onchange="setLang(this.value)" title="UI language" style="padding:6px 8px">'+LANGS.map(function(p){return '<option value="'+p[0]+'"'+(p[0]===c?' selected':'')+'>'+p[1]+'</option>';}).join('')+'</select>';}
 """
 
@@ -1964,10 +2009,10 @@ _STATUS_JS = """
 function stat(s){const m={recording:'rec',transcribing:'sum',summarizing:'sum',done:'done',error:'err'};
   return [m[s]||'done', t('st_'+s)];}
 function esc(t){return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}
-function lang(){return encodeURIComponent(document.getElementById('lang')?.value||'zh')}
+function lang(){return encodeURIComponent(document.getElementById('lang')?.value||transcriptionLang())}
 function progress(d){
   const pct=Math.max(0,Math.min(100,Number(d.progress_percent||0)));
-  const label=esc(d.progress_label||t('preparing'));
+  const label=esc(d.status?t('st_'+d.status):t('preparing'))+(d.duration?' · '+esc(d.duration):'');
   return `<div class=progline><div class=mut>${label} · ${pct}%</div><div class=prog><i style="width:${pct}%"></i></div></div>`;
 }
 """
@@ -1986,7 +2031,7 @@ _INDEX_HTML = """<!doctype html><meta charset=utf-8>
  <div class=card><div class=row>
    <b id=addAudioLabel></b>
    <div>
-    <select id=lang>
+    <select id=lang onchange="setTranscriptionLang(this.value)">
       <option value="zh" selected>中文</option>
       <option value="auto">Auto</option>
       <option value="en">English</option>
@@ -2010,6 +2055,7 @@ function applyStatic(){
   document.getElementById('uploadBtn').textContent=t('upload');
   document.getElementById('memosBtn').textContent=t('memos');
   document.getElementById('lang').title=t('langTitle');
+  document.getElementById('lang').value=transcriptionLang();
   document.getElementById('uilang').innerHTML=langSelect();
 }
 let live=null;
@@ -2076,7 +2122,7 @@ async function loadMemos(){
 async function imp(i,btn){
   btn.disabled=true;btn.textContent=t('importing');
   const r=await fetch('/api/voicememos/import',{method:'POST',
-    headers:{'Content-Type':'application/json'},body:JSON.stringify({i,language:document.getElementById('lang').value})});
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({i,language:transcriptionLang()})});
   const d=await r.json();
   if(d.id)location='/s/'+d.id;
   else{alert(d.error||t('importFail'));btn.disabled=false;btn.textContent=t('import');}
@@ -2220,7 +2266,7 @@ def _graph_viewer_html() -> str:
         'const SRC = qs.get("src") || "graph.json";',
         'const SRC = qs.get("src") || "/api/graph";').replace(
         'const TITLE = qs.get("title") || "";',
-        'const TITLE = qs.get("title") || "🕸️ voice-notes 知识图谱";')
+        'const TITLE = qs.get("title") || "";')
 
 
 _ID_RE = re.compile(r"^[0-9]{8}-[0-9]{6}0*$")

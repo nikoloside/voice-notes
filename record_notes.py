@@ -342,6 +342,7 @@ class VoiceNotesApp:
             chunk_radius=float(self.tcfg.get("chunk_radius", 5.0)),
             session_id=session_id,
             resume=resume,
+            language="auto" if self.language is None else self.language,
         )
         self.import_sessions[session.id] = session
         print(f"[import] {session.name} -> {self._notes_url(session)}")
@@ -360,6 +361,8 @@ class VoiceNotesApp:
             meta = json.loads(meta_path.read_text())
         except Exception:
             return None
+        if meta.get("language"):
+            self.set_language(meta["language"])
         source_path = meta.get("source_path")
         path = Path(source_path) if source_path else self.notes_dir / sid / "audio.wav"
         if not path.exists():
@@ -394,6 +397,7 @@ class VoiceNotesApp:
             on_done=self._on_notes_done,
             min_chunk_sec=float(self.tcfg.get("live_min_chunk_seconds", 4.0)),
             max_chunk_sec=float(self.tcfg.get("live_max_chunk_seconds", 24.0)),
+            language="auto" if self.language is None else self.language,
         )
         self.notes_session = session
         self.recorder.tap = session.feed_mic
