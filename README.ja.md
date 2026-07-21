@@ -33,23 +33,54 @@
 
 ## セットアップ
 
-Python 3.11+ が必要です。
+**ワンコマンドでインストール。** Python venv を作成し、ローカルの Whisper
+文字起こしモデルをダウンロードし、[Ollama](https://ollama.com) と小さなローカル
+要約モデルを導入し、設定を書き込みます —— つまり**文字起こしも要約も完全にローカルで
+動き、クラウド不要、そのまま使えます**。
+
+macOS / Linux：
+
+```bash
+git clone https://github.com/nikoloside/voice-notes
+cd voice-notes
+./install.sh
+```
+
+Windows（PowerShell）：
+
+```powershell
+git clone https://github.com/nikoloside/voice-notes
+cd voice-notes
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+その後、Web UI を起動：
+
+```bash
+./record-notes          # macOS / Linux
+.\record-notes.ps1      # Windows
+```
+
+非力なマシンではより小さいモデルを使えます：
+`VOICE_NOTES_WHISPER_MODEL=small ./install.sh`（および `VOICE_NOTES_LLM=llama3.2:3b`）。
+
+<details><summary>手動セットアップ（Python 3.11+）</summary>
 
 ```bash
 cd voice-notes
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-```
-
-Web UI を起動：
-
-```bash
 ./record-notes
 ```
 
+Layer 2/3 の要約には LLM が必要です —— ローカルで Ollama を動かすか、`openai_url`
+を OpenAI 互換サーバーに向けてください（後述）。
+</details>
+
 既定のページは <http://127.0.0.1:8765>。録音の開始/停止、音声ファイルのアップロード、
 macOS ボイスメモの取り込み、生成ファイルのダウンロードができます。右上で
-**中文 / 日本語 / English** を切り替えられます。
+**中文 / 日本語 / English** を切り替えられます。生成されたメモはローカルフォルダの
+プレーンな Markdown です —— 自分のリポジトリに入れる、共有する、[MCP サーバー](#mcp-サーバーclaude-からメモを読む)経由で Claude から読む、いずれも可能です。
 
 3つのレイヤーは厳密に順番に実行されます —— Layer 1 → Layer 2 → Layer 3：
 

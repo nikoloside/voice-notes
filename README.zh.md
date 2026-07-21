@@ -30,22 +30,53 @@
 
 ## 安装
 
-需要 Python 3.11+。
+**一键安装。** 它会创建 Python venv、下载本地 Whisper 转写模型、安装
+[Ollama](https://ollama.com) + 一个小的本地摘要模型、并写好配置——于是**转写和
+摘要都在本地跑，无需云端，开箱即用**。
+
+macOS / Linux：
+
+```bash
+git clone https://github.com/nikoloside/voice-notes
+cd voice-notes
+./install.sh
+```
+
+Windows（PowerShell）：
+
+```powershell
+git clone https://github.com/nikoloside/voice-notes
+cd voice-notes
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+然后启动 Web 界面：
+
+```bash
+./record-notes          # macOS / Linux
+.\record-notes.ps1      # Windows
+```
+
+配置较低的机器可用更小的模型：
+`VOICE_NOTES_WHISPER_MODEL=small ./install.sh`（以及 `VOICE_NOTES_LLM=llama3.2:3b`）。
+
+<details><summary>手动安装（Python 3.11+）</summary>
 
 ```bash
 cd voice-notes
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-```
-
-启动 Web 界面：
-
-```bash
 ./record-notes
 ```
 
+Layer 2/3 摘要需要 LLM——本地跑 Ollama，或把 `openai_url` 指向一个 OpenAI 兼容
+服务（见下文）。
+</details>
+
 默认页面是 <http://127.0.0.1:8765>。可以开始/停止录音、上传音频文件、导入
 macOS 语音备忘录，并下载生成的文件。界面右上角可切换 **中文 / 日本語 / English**。
+生成的笔记就是本地文件夹里的纯 Markdown——你可以放进自己的仓库、分享出去，或用
+[MCP 服务](#mcp-服务让-claude-读你的笔记)让 Claude 读取。
 
 三层严格按顺序执行 —— Layer 1 → Layer 2 → Layer 3：
 

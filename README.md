@@ -33,22 +33,54 @@ focused app. Those remain the responsibility of
 
 ## Setup
 
-Requires Python 3.11+.
+**One-command install.** It creates a Python venv, downloads the local Whisper
+transcription model, installs [Ollama](https://ollama.com) + a small local
+summary model, and writes a config — so transcription **and** summaries run
+fully locally, no cloud, out of the box.
+
+macOS / Linux:
+
+```bash
+git clone https://github.com/nikoloside/voice-notes
+cd voice-notes
+./install.sh
+```
+
+Windows (PowerShell):
+
+```powershell
+git clone https://github.com/nikoloside/voice-notes
+cd voice-notes
+powershell -ExecutionPolicy Bypass -File install.ps1
+```
+
+Then start the web UI:
+
+```bash
+./record-notes          # macOS / Linux
+.\record-notes.ps1      # Windows
+```
+
+Lighter machines can use a smaller model:
+`VOICE_NOTES_WHISPER_MODEL=small ./install.sh` (and `VOICE_NOTES_LLM=llama3.2:3b`).
+
+<details><summary>Manual setup (Python 3.11+)</summary>
 
 ```bash
 cd voice-notes
 python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
-```
-
-Run the web UI:
-
-```bash
 ./record-notes
 ```
 
+Layer 2/3 summaries need an LLM — run Ollama locally, or point `openai_url` at
+an OpenAI-compatible server (see below).
+</details>
+
 The default page is <http://127.0.0.1:8765>. It can start/stop a recording,
 upload audio files, import macOS Voice Memos, and download the generated files.
+The generated notes are plain Markdown in a local folder — keep them in your own
+repo, share them, or read them from Claude via the [MCP server](#mcp-server-read-notes-from-claude).
 
 The three layers run strictly in sequence — Layer 1 → Layer 2 → Layer 3:
 
