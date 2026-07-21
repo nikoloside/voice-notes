@@ -10,10 +10,10 @@
 ![i18n](https://img.shields.io/badge/i18n-中文%20%7C%20日本語%20%7C%20English-ff69b4.svg)
 ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)
 
-![demo](docs/demo.gif)
+![demo](docs/demo-en.gif)
 
 > Home → a meeting's 3-layer summary → the cross-meeting knowledge graph.
-> _(Placeholder demo data. [▶ full-quality MP4](docs/demo.mp4).)_
+> _(Placeholder demo data. [▶ full-quality MP4](docs/demo-en.mp4).)_
 
 Standalone local audio notes extracted from
 [`type-by-voice`](https://github.com/kotaro-nakata/type-by-voice).

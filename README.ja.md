@@ -10,10 +10,10 @@
 ![i18n](https://img.shields.io/badge/UI-中文%20%7C%20日本語%20%7C%20English-ff69b4.svg)
 ![platform](https://img.shields.io/badge/platform-macOS%20%7C%20Linux-lightgrey.svg)
 
-![demo](docs/demo.gif)
+![demo](docs/demo-ja.gif)
 
 > ホーム → あるミーティングの3層要約 → ミーティング横断のナレッジグラフ。
-> _（プレースホルダーのデモデータ。[▶ 高画質 MP4](docs/demo.mp4)。）_
+> _（プレースホルダーのデモデータ。[▶ 高画質 MP4](docs/demo-ja.mp4)。）_
 
 [`type-by-voice`](https://github.com/kotaro-nakata/type-by-voice) から切り出した、
 スタンドアロンのローカル音声メモツールです。

@@ -10,10 +10,10 @@
 ![i18n](https://img.shields.io/badge/界面-中文%20%7C%20日本語%20%7C%20English-ff69b4.svg)
 ![platform](https://img.shields.io/badge/平台-macOS%20%7C%20Linux-lightgrey.svg)
 
-![demo](docs/demo.gif)
+![demo](docs/demo-zh.gif)
 
 > 首页 → 某场会议的三层总结 → 跨会议知识图谱。
-> _（占位演示数据。[▶ 高清 MP4](docs/demo.mp4)。）_
+> _（占位演示数据。[▶ 高清 MP4](docs/demo-zh.mp4)。）_
 
 从 [`type-by-voice`](https://github.com/kotaro-nakata/type-by-voice) 中拆分出来的独立本地语音笔记工具。
 
