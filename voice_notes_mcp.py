@@ -99,16 +99,20 @@ def _summary_card(session: Path) -> tuple[str, str]:
     """Split summary.md into (one_page, full_summary).
 
     Layout written by the app: the Layer 3 one-pager, a '---' rule, a
-    '# 详细总结（Layer 2）' heading, then the Layer 2 full summary."""
+    Layer-2 heading (localized per the session's language), then the Layer 2
+    full summary."""
     text = _read(session, "summary.md")
     if not text:
         return "", ""
-    marker = "\n# 详细总结（Layer 2）"
-    if marker in text:
-        head, tail = text.split(marker, 1)
-        one = head.rstrip().removesuffix("---").rstrip()
-        full = tail.lstrip("\n")
-        return one, full
+    # The heading is written in the session's language — accept all of them.
+    for marker in ("\n# 详细总结（Layer 2）",
+                   "\n# 全文要約（Layer 2）",
+                   "\n# Full summary (Layer 2)"):
+        if marker in text:
+            head, tail = text.split(marker, 1)
+            one = head.rstrip().removesuffix("---").rstrip()
+            full = tail.lstrip("\n")
+            return one, full
     return text, ""
 
 

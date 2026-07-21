@@ -2262,11 +2262,10 @@ def _graph_viewer_html() -> str:
     except OSError:
         return ""
     # Point the viewer at our knowledge graph unless ?src= overrides it.
+    # (The viewer localizes its own title/labels via GRAPH_I18N.)
     return html.replace(
         'const SRC = qs.get("src") || "graph.json";',
-        'const SRC = qs.get("src") || "/api/graph";').replace(
-        'const TITLE = qs.get("title") || "";',
-        'const TITLE = qs.get("title") || "";')
+        'const SRC = qs.get("src") || "/api/graph";')
 
 
 _ID_RE = re.compile(r"^[0-9]{8}-[0-9]{6}0*$")
