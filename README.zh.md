@@ -13,7 +13,7 @@
 ![demo](docs/demo.gif)
 
 > 首页 → 某场会议的三层总结 → 跨会议知识图谱。
-> _（使用占位演示数据展示。）_
+> _（占位演示数据。[▶ 高清 MP4](docs/demo.mp4)。）_
 
 从 [`type-by-voice`](https://github.com/kotaro-nakata/type-by-voice) 中拆分出来的独立本地语音笔记工具。
 

@@ -13,7 +13,7 @@
 ![demo](docs/demo.gif)
 
 > ホーム → あるミーティングの3層要約 → ミーティング横断のナレッジグラフ。
-> _（プレースホルダーのデモデータで表示しています。）_
+> _（プレースホルダーのデモデータ。[▶ 高画質 MP4](docs/demo.mp4)。）_
 
 [`type-by-voice`](https://github.com/kotaro-nakata/type-by-voice) から切り出した、
 スタンドアロンのローカル音声メモツールです。

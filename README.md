@@ -13,7 +13,7 @@
 ![demo](docs/demo.gif)
 
 > Home → a meeting's 3-layer summary → the cross-meeting knowledge graph.
-> _(Shown with placeholder demo data.)_
+> _(Placeholder demo data. [▶ full-quality MP4](docs/demo.mp4).)_
 
 Standalone local audio notes extracted from
 [`type-by-voice`](https://github.com/kotaro-nakata/type-by-voice).
