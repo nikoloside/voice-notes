@@ -49,14 +49,15 @@ const qs = new URLSearchParams(location.search);
 const SRC = qs.get("src") || "graph.json";
 const TITLE = qs.get("title") || "";
 const GRAPH_I18N = {
-  zh:{title:"🕸️ voice-notes 知识图谱",search:"搜索节点…",loading:"加载中…",loadFail:"加载失败",empty:"图谱还是空的。生成一些笔记后再来。",stat:(s,e,n)=>s+" 场会议 · "+e+" 个实体 · "+n+" 条边",desc:"说明",date:"时间",duration:"时长",mentions:"被提到",times:"次",open:"打开",types:{session:"会话",person:"人物",project:"项目",org:"组织",concept:"概念",decision:"决定",todo:"待办"}},
-  ja:{title:"🕸️ voice-notes ナレッジグラフ",search:"ノードを検索…",loading:"読み込み中…",loadFail:"読み込みに失敗しました",empty:"グラフはまだ空です。ノートを作成してからもう一度開いてください。",stat:(s,e,n)=>"会議 "+s+"件 · エンティティ "+e+"件 · 関係 "+n+"件",desc:"説明",date:"日時",duration:"長さ",mentions:"登場回数",times:"回",open:"開く",types:{session:"セッション",person:"人物",project:"プロジェクト",org:"組織",concept:"概念",decision:"決定",todo:"ToDo"}},
-  en:{title:"🕸️ voice-notes Knowledge graph",search:"Search nodes…",loading:"Loading…",loadFail:"Failed to load",empty:"The graph is empty. Create some notes and try again.",stat:(s,e,n)=>s+" meetings · "+e+" entities · "+n+" edges",desc:"Description",date:"Date",duration:"Duration",mentions:"Mentions",times:"times",open:"Open",types:{session:"Session",person:"Person",project:"Project",org:"Organization",concept:"Concept",decision:"Decision",todo:"To-do"}}
+  zh:{title:"🕸️ voice-notes 知识图谱",search:"搜索节点…",loading:"加载中…",loadFail:"加载失败",empty:"图谱还是空的。生成一些笔记后再来。",stat:(s,e,n)=>s+" 场会议 · "+e+" 个实体 · "+n+" 条边",desc:"说明",date:"时间",duration:"时长",mentions:"被提到",mentionEdge:"提到",times:"次",open:"打开",types:{session:"会话",person:"人物",project:"项目",org:"组织",concept:"概念",decision:"决定",todo:"待办"}},
+  ja:{title:"🕸️ voice-notes ナレッジグラフ",search:"ノードを検索…",loading:"読み込み中…",loadFail:"読み込みに失敗しました",empty:"グラフはまだ空です。ノートを作成してからもう一度開いてください。",stat:(s,e,n)=>"会議 "+s+"件 · エンティティ "+e+"件 · 関係 "+n+"件",desc:"説明",date:"日時",duration:"長さ",mentions:"登場回数",mentionEdge:"登場",times:"回",open:"開く",types:{session:"セッション",person:"人物",project:"プロジェクト",org:"組織",concept:"概念",decision:"決定",todo:"ToDo"}},
+  en:{title:"🕸️ voice-notes Knowledge graph",search:"Search nodes…",loading:"Loading…",loadFail:"Failed to load",empty:"The graph is empty. Create some notes and try again.",stat:(s,e,n)=>s+" meetings · "+e+" entities · "+n+" edges",desc:"Description",date:"Date",duration:"Duration",mentions:"Mentions",mentionEdge:"Mentions",times:"times",open:"Open",types:{session:"Session",person:"Person",project:"Project",org:"Organization",concept:"Concept",decision:"Decision",todo:"To-do"}}
 };
 const graphLang=()=>{const l=qs.get("lang")||localStorage.getItem("vn_lang")||((navigator.language||"").startsWith("ja")?"ja":(navigator.language||"").startsWith("en")?"en":"zh");return GRAPH_I18N[l]?l:"zh"};
 let G=GRAPH_I18N[graphLang()];
 function setGraphLang(l){localStorage.setItem("vn_lang",l);location.reload()}
 const gt=k=>G[k];
+const gl=(obj,key)=>obj&&obj.i18n&&obj.i18n[graphLang()]&&obj.i18n[graphLang()][key]||obj&&obj[key]||"";
 document.documentElement.lang=graphLang();
 document.getElementById("ui-language").value=graphLang();
 document.getElementById("title").textContent=TITLE||gt("title");
@@ -95,9 +96,10 @@ let nodes,edges,net,RAW;
   ns.forEach(n=>{
     const g=n.group||n.type||"other"; groups.add(g);
     const mentions=(n.meta&&n.meta.mentions)||1;
+    const label=gl(n,"label")||n.id;
     nodes.add({
-      id:n.id, label:n.label&&n.label.length>18?n.label.slice(0,18)+"…":(n.label||n.id),
-      title:(n.meta&&n.meta.desc)||n.label||"",
+      id:n.id, label:label.length>18?label.slice(0,18)+"…":label,
+      title:gl(n,"desc")||(n.meta&&n.meta.desc)||label,
       shape:SHAPE[n.type]||"dot",
       size:n.type==="session"?20:Math.min(30,12+2*mentions),
       color:{background:colorFor(g),border:"#e6edf3"},borderWidth:1.5,
@@ -106,7 +108,7 @@ let nodes,edges,net,RAW;
     });
   });
   es.forEach(e=>edges.add({
-    from:e.from,to:e.to,label:e.label||undefined,
+    from:e.from,to:e.to,label:e.kind==="mention"?gt("mentionEdge"):(gl(e,"label")||undefined),
     arrows:e.rel?"to":undefined,
     dashes:!!e.dashes||!!e.rel,
     color:{color:e.rel?"#5a6b8c":"#3b3d4a"},
@@ -134,7 +136,8 @@ function showPanel(n){
   const el=document.getElementById("panel");
   const m=n.meta||{};
   const rows=[];
-  if(m.desc) rows.push(row(gt("desc"),m.desc));
+  const desc=gl(n,"desc")||m.desc;
+  if(desc) rows.push(row(gt("desc"),desc));
   if(m.date) rows.push(row(gt("date"),m.date));
   if(m.duration) rows.push(row(gt("duration"),m.duration));
   if(m.mentions) rows.push(row(gt("mentions"),m.mentions+" "+gt("times")));
@@ -142,7 +145,7 @@ function showPanel(n){
     rows.push(row(k,m[k])); }
   const open=m.url?`<div class="p-row"><a href="${esc(m.url)}" target="_blank">↗ ${gt("open")}</a></div>`:"";
   el.innerHTML=`<div class="p-close" onclick="hide()">✕</div>
-    <div class="p-name">${esc(n.label)}</div>
+    <div class="p-name">${esc(gl(n,"label")||n.label)}</div>
     <div><span class="p-tag">${esc(G.types[n.type]||n.type||"")}</span>
       ${n.group&&n.group!==n.type?`<span class="p-tag">${esc(G.types[n.group]||n.group)}</span>`:""}</div>
     ${rows.join("")}${open}`;
@@ -155,7 +158,7 @@ function doSearch(q){
   q=q.trim().toLowerCase();
   if(!q){nodes.forEach(n=>nodes.update({id:n.id,hidden:false}));return;}
   const hit=[];
-  nodes.forEach(n=>{const on=(n.raw.label||"").toLowerCase().includes(q);
+  nodes.forEach(n=>{const on=(gl(n.raw,"label")||"").toLowerCase().includes(q);
     nodes.update({id:n.id,hidden:!on&&n.raw.type!=="session"?false:false});
     if(on)hit.push(n.id);});
   if(hit.length){net.selectNodes(hit);net.focus(hit[0],{scale:1.1,animation:true});}
