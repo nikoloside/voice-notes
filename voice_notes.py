@@ -2409,10 +2409,11 @@ def _running_notes_md(title: str, segments: list[tuple[float, str]], status: str
 # Localhost web UI
 # --------------------------------------------------------------------------- #
 _PAGE_CSS = """
-:root{--bg:#0b0e14;--fg:#e8ecf4;--mut:#929caf;--card:#161c27;--panel:#111620;
---line:#273043;--acc:#7189ff;--rec:#f05d72;--ok:#35c58b;--amb:#e8b84a}
-@media(prefers-color-scheme:light){:root{--bg:#f7f8fa;--fg:#1a1d24;--mut:#69707f;
---card:#fff;--line:#e4e7ee;--acc:#4463d8}}
+:root{--bg:#0b0f16;--fg:#f0f3f8;--mut:#aab3c3;--card:#192130;--panel:#121925;
+--line:#344158;--acc:#8297ff;--rec:#f36b7e;--ok:#43d39a;--amb:#f0c15a}
+@media(prefers-color-scheme:light){:root{--bg:#f6f8fb;--fg:#182033;--mut:#5f6c80;
+--card:#fff;--panel:#edf1f7;--line:#cfd6e2;--acc:#4967dc;--rec:#d63f58;
+--ok:#16855f;--amb:#9a6800}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);
 font:15px/1.6 -apple-system,"Segoe UI","Noto Sans CJK JP",sans-serif}
 .wrap{max-width:860px;margin:0 auto;padding:28px 20px 60px}
@@ -2508,7 +2509,8 @@ border-radius:9px;padding:9px 11px;margin:10px 0 12px;outline:none}
 .workspace-new{display:block;text-align:center;padding:8px 10px;border-radius:9px;
 border:1px solid var(--line);margin-bottom:18px}
 .side-session{display:block;color:var(--fg);padding:9px 10px;border-radius:9px;margin:3px 0}
-.side-session:hover{background:var(--card)}.side-session.active{background:var(--card);box-shadow:inset 3px 0 var(--acc)}
+.side-session:hover{background:var(--card)}.side-session.active{background:var(--card);
+box-shadow:inset 3px 0 var(--acc);color:var(--fg)}
 .side-session b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
 .side-session small{display:flex;justify-content:space-between;color:var(--mut);font-size:11px;margin-top:2px}
 .workspace-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:14px}
