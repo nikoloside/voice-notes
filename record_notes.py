@@ -352,6 +352,30 @@ class VoiceNotesApp:
         session = self.create_import_session(Path(path), title, source)
         return session.id if session else None
 
+    def create_markdown_session(self, path: Path, title: str,
+                                session_id: str | None = None):
+        from voice_notes import MarkdownImportSession
+
+        session = MarkdownImportSession(
+            base_dir=self.notes_dir,
+            src_path=Path(path),
+            title=title,
+            summarizer=self._notes_summarizer(),
+            on_done=self._on_notes_done,
+            language="auto" if self.language is None else self.language,
+            session_id=session_id,
+        )
+        self.import_sessions[session.id] = session
+        print(f"[markdown] {session.name} -> {self._notes_url(session)}")
+        return session
+
+    def start_markdown_import(self, path, title: str):
+        try:
+            return self.create_markdown_session(Path(path), title).id
+        except (OSError, UnicodeError, ValueError) as e:
+            print(f"[markdown] Import failed: {e}")
+            return None
+
     def resume_import(self, sid: str):
         session = self.import_sessions.get(sid)
         if session and getattr(session, "_thread", None) and session._thread.is_alive():
@@ -367,6 +391,13 @@ class VoiceNotesApp:
         path = Path(source_path) if source_path else self.notes_dir / sid / "audio.wav"
         if not path.exists():
             return None
+        if meta.get("source") == "markdown":
+            try:
+                return self.create_markdown_session(
+                    path, meta.get("title") or path.stem,
+                    session_id=sid).id
+            except (OSError, UnicodeError, ValueError):
+                return None
         session = self.create_import_session(
             path,
             meta.get("title") or path.stem,
@@ -444,6 +475,7 @@ class VoiceNotesApp:
                 stop=self.stop_notes_session,
                 active=self.active,
                 import_file=self.start_import,
+                import_markdown=self.start_markdown_import,
                 resume_import=self.resume_import,
                 set_language=self.set_language,
             ),

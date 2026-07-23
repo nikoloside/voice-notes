@@ -89,7 +89,8 @@ def aggregate_graph(base_dir) -> dict:
     def canon(name: str) -> str:
         return aliases.get(_norm_key(name), str(name).strip())
 
-    def entity_node(name: str, etype: str, desc: str, count: bool) -> str:
+    def entity_node(name: str, etype: str, desc: str,
+                    translations: dict, count: bool) -> str:
         cname = canon(name)
         if not cname:
             return ""
@@ -99,13 +100,35 @@ def aggregate_graph(base_dir) -> dict:
             nid = "e:" + key
             entity_id[key] = nid
             etype = etype if etype in ENTITY_TYPES else "concept"
+            localized = {}
+            if isinstance(translations, dict):
+                for lang in ("ja", "en", "zh"):
+                    value = translations.get(lang, {})
+                    if isinstance(value, dict):
+                        localized[lang] = {
+                            "label": str(value.get("name", "")).strip() or cname,
+                            "desc": str(value.get("desc", "")).strip() or desc,
+                        }
             nodes[nid] = {"id": nid, "label": cname, "type": etype,
-                          "group": etype, "meta": {"desc": desc, "mentions": 0}}
+                          "group": etype, "i18n": localized,
+                          "meta": {"desc": desc, "mentions": 0}}
         n = nodes[nid]
         if count:
             n["meta"]["mentions"] += 1     # counts distinct meetings
         if desc and len(desc) > len(n["meta"].get("desc", "")):
             n["meta"]["desc"] = desc
+        if isinstance(translations, dict):
+            for lang in ("ja", "en", "zh"):
+                value = translations.get(lang, {})
+                if not isinstance(value, dict):
+                    continue
+                current = n.setdefault("i18n", {}).setdefault(lang, {})
+                lname = str(value.get("name", "")).strip()
+                ldesc = str(value.get("desc", "")).strip()
+                if lname:
+                    current.setdefault("label", lname)
+                if ldesc and len(ldesc) > len(current.get("desc", "")):
+                    current["desc"] = ldesc
         return nid
 
     def add_edge(e: dict):
@@ -125,6 +148,7 @@ def aggregate_graph(base_dir) -> dict:
             extra = {"parts": " · ".join(m[1].get("title", m[0]) for m in members)}
         nodes[mid] = {
             "id": mid, "label": label, "type": "session", "group": "session",
+            "i18n": {lang: {"label": label} for lang in ("ja", "en", "zh")},
             "meta": {"date": (first_meta.get("started") or "").replace("T", " "),
                      "duration": first_meta.get("duration", ""),
                      "url": f"/s/{first_sid}", **extra},
@@ -136,18 +160,21 @@ def aggregate_graph(base_dir) -> dict:
                 cname = canon(e.get("name", ""))
                 key = _norm_key(cname)
                 nid = entity_node(e.get("name", ""), e.get("type", "concept"),
-                                  e.get("desc", ""), count=key not in counted)
+                                  e.get("desc", ""), e.get("i18n", {}),
+                                  count=key not in counted)
                 if not nid:
                     continue
                 counted.add(key)
                 local[key] = nid
-                add_edge({"from": mid, "to": nid, "label": "提到"})
+                add_edge({"from": mid, "to": nid,
+                          "label": "", "kind": "mention"})
             for r in graph.get("relations", []):
                 a = local.get(_norm_key(canon(r.get("from", ""))))
                 b = local.get(_norm_key(canon(r.get("to", ""))))
                 if a and b and a != b:
                     add_edge({"from": a, "to": b,
-                              "label": r.get("label", ""), "rel": True})
+                              "label": r.get("label", ""),
+                              "i18n": r.get("i18n", {}), "rel": True})
     return {"nodes": list(nodes.values()), "edges": edges}
 
 

@@ -395,7 +395,7 @@ Transcript:
 ---
 """
 
-_FULL_SUMMARY_PROMPT = """\
+_FULL_SUMMARY_PROMPT_ZH = """\
 你是一个会议/语音笔记整理助手。下面是一场录音的完整口语转写（可能有转写错误和
 口头语），时间戳格式是 [h:mm:ss]。请把它整理成一份详细的全文总结（Layer 2）。
 
@@ -413,7 +413,7 @@ _FULL_SUMMARY_PROMPT = """\
 ---
 """
 
-_MERGE_PROMPT = """\
+_MERGE_PROMPT_ZH = """\
 你是一个会议/语音笔记整理助手。同一场录音太长，已按时间顺序分成几部分分别做了
 详细总结。请把下面这些部分总结合并成一份完整的全文总结（Layer 2）。
 
@@ -429,7 +429,7 @@ _MERGE_PROMPT = """\
 ---
 """
 
-_ONE_PAGE_PROMPT = """\
+_ONE_PAGE_PROMPT_ZH = """\
 你是一个会议纪要整理助手。下面是一场录音的详细全文总结。请把它再精简成
 一页纸（One page）的正式纪要（Layer 3），让没参加的人一分钟内看懂。
 
@@ -457,7 +457,139 @@ _ONE_PAGE_PROMPT = """\
 ---
 """
 
-_ENTITIES_PROMPT = """\
+_FULL_SUMMARY_PROMPTS = {
+    "zh": _FULL_SUMMARY_PROMPT_ZH,
+    "ja": """\
+あなたは会議・音声ノートの編集アシスタントです。以下は、会議、通話、動画、
+または口述の完全な文字起こしです。誤認識、言いよどみ、重複を含む場合があります。
+タイムスタンプの形式は [h:mm:ss] です。日本語で詳細な全文要約（Layer 2）を作成してください。
+
+要件：
+- 入力に他言語が混じっていても、固有名詞と引用を除き、出力は必ず自然な日本語にする。
+- 言いよどみ、重複、明らかな誤認識を除き、逐語的に並べず内容を整理する。
+- 時系列ではなくテーマ別にまとめ、各テーマを ### 見出しと箇条書きで構成する。
+- 判断、結論、数値、名前、日付、意見の相違、未解決事項を漏らさない。
+- 明確な行動項目は「- [ ]」形式にし、確認が必要な点は独立して示す。
+- Markdown本文だけを出力し、前置きや説明は出力しない。
+
+文字起こし：
+---
+{transcript}
+---
+""",
+    "en": """\
+You are an editor for meeting and voice notes. Below is the complete transcript
+of a meeting, call, video, or spoken thought. It may contain transcription errors,
+filler, and repetition. Timestamps use [h:mm:ss]. Create a detailed full summary
+(Layer 2) in English.
+
+Requirements:
+- Even if the input mixes languages, write all output in natural English except proper nouns and quotations.
+- Remove filler, repetition, and obvious transcription errors; synthesize instead of paraphrasing line by line.
+- Organize by topic, not chronology, using ### headings and bullet lists.
+- Preserve substantive judgments, conclusions, numbers, names, dates, disagreements, and open questions.
+- Format explicit action items as “- [ ]”; list uncertain points separately.
+- Output only the Markdown body, with no preamble or commentary.
+
+Transcript:
+---
+{transcript}
+---
+""",
+}
+
+_MERGE_PROMPTS = {
+    "zh": _MERGE_PROMPT_ZH,
+    "ja": """\
+あなたは会議・音声ノートの編集アシスタントです。長い録音を時系列で分割して作成した
+複数の詳細要約を、1つの完全な全文要約（Layer 2）に統合してください。
+
+要件：
+- 出力は必ず自然な日本語にする。
+- 重複するテーマを統合し、分割単位ではなくテーマ別に構成する。
+- 判断、結論、数値、名前、日付、行動項目（- [ ]）、確認事項を漏らさない。
+- Markdown本文だけを出力し、前置きや説明は出力しない。
+
+分割要約：
+---
+{parts}
+---
+""",
+    "en": """\
+You are an editor for meeting and voice notes. A long recording was split in
+chronological order and summarized in parts. Merge them into one complete full
+summary (Layer 2).
+
+Requirements:
+- Write all output in natural English.
+- Merge repeated topics and organize by topic rather than by source part.
+- Preserve judgments, conclusions, numbers, names, dates, action items (- [ ]), and open questions.
+- Output only the Markdown body, with no preamble or commentary.
+
+Part summaries:
+---
+{parts}
+---
+""",
+}
+
+_ONE_PAGE_PROMPTS = {
+    "zh": _ONE_PAGE_PROMPT_ZH,
+    "ja": """\
+あなたは会議議事録の編集アシスタントです。以下の詳細な全文要約を、参加していない人でも
+1分で理解できる正式な1ページ要約（Layer 3）に圧縮してください。
+
+要件：
+- 出力は必ず自然な日本語にする。
+- 最重要の結論、判断、行動項目だけを残し、1ページ相当以内に収める。
+- 次の構成でMarkdownだけを出力する。
+
+## 一言でいうと
+（最も重要な結論または方向性を1〜3文）
+
+## 重要ポイント
+（重要度順、最大8項目）
+
+## アクション項目
+- [ ] ...
+
+## 確認事項
+- ...
+
+詳細要約：
+---
+{summary}
+---
+""",
+    "en": """\
+You are an editor for formal meeting minutes. Condense the detailed summary below
+into a one-page note (Layer 3) that someone who did not attend can understand in one minute.
+
+Requirements:
+- Write all output in natural English.
+- Keep only the most important conclusions, judgments, and actions, within one page.
+- Output only Markdown with this structure:
+
+## Bottom line
+(The central conclusion or direction in 1–3 sentences.)
+
+## Key points
+(Up to 8 items, ordered by importance.)
+
+## Action items
+- [ ] ...
+
+## Checkpoints
+- ...
+
+Detailed summary:
+---
+{summary}
+---
+""",
+}
+
+_ENTITIES_PROMPT_ZH = """\
 你是一个知识图谱抽取助手。下面是一场会议/录音的整理笔记。请从中抽取出知识实体
 和它们之间的关系，用于把多场会议连成一张个人知识图谱。
 
@@ -487,7 +619,7 @@ _ENTITIES_PROMPT = """\
 ---
 """
 
-_ALIASES_PROMPT = """\
+_ALIASES_PROMPT_ZH = """\
 下面是从多场会议里抽取出的知识实体名（每行 “名称 (类型)”）。有些是同一个
 人 / 项目 / 机构 / 概念 / 主题的不同叫法（缩写、别名、同义、同一主题的不同措辞），
 请把它们归并到一个规范名下。
@@ -505,6 +637,117 @@ _ALIASES_PROMPT = """\
 {names}
 ---
 """
+
+_ENTITIES_PROMPTS = {
+    "zh": _ENTITIES_PROMPT_ZH,
+    "ja": """\
+あなたは個人用ナレッジグラフの抽出アシスタントです。以下の会議・録音ノートから、
+複数の会議をつなぐための知識エンティティと関係を抽出してください。
+
+エンティティ種別は次の英小文字だけを使います：
+- person   人物
+- project  プロジェクト、製品、作品
+- org      会社、組織、チーム
+- concept  概念、テーマ、技術、手法
+- decision 明確な意思決定や結論
+- todo     行動項目、ToDo
+
+要件：
+- name、desc、relations.labelは、固有名詞を除き必ず自然な日本語にする。
+- nameは短く、複数の会議で再利用できる名称にし、文章にしない。
+- 同じエンティティを重複させず、無意味な口語表現は無視する。
+- descは、この会議における役割を日本語1文で説明する。
+- relationsのfrom/toはentitiesのnameと完全一致させ、labelは「担当」「検討」「依存」など短い日本語にする。
+- JSONだけを出力し、説明やMarkdownコードフェンスを出力しない：
+
+{{"entities":[{{"name":"","type":"person","desc":""}}],
+ "relations":[{{"from":"","to":"","label":""}}]}}
+
+ノート：
+---
+{summary}
+---
+""",
+    "en": """\
+You extract a personal knowledge graph from meeting and voice notes. Extract
+knowledge entities and relations that can connect multiple meetings.
+
+Use only these lowercase entity types:
+- person, project, org, concept, decision, todo
+
+Requirements:
+- Write name, desc, and relations.label in natural English, except proper nouns.
+- Keep names short and reusable across meetings; do not use full sentences as names.
+- Deduplicate entities and ignore meaningless speech filler.
+- Describe each entity's role in this meeting in one English sentence.
+- relations.from/to must exactly match an entity name; use a short English label such as “owns”, “considers”, or “depends on”.
+- Output JSON only, without explanation or Markdown fences:
+
+{{"entities":[{{"name":"","type":"person","desc":""}}],
+ "relations":[{{"from":"","to":"","label":""}}]}}
+
+Notes:
+---
+{summary}
+---
+""",
+}
+
+_ALIASES_PROMPTS = {
+    "zh": _ALIASES_PROMPT_ZH,
+    "ja": """\
+以下は複数の会議から抽出した知識エンティティ名です。略称、別名、同義語など、
+同一の人物・プロジェクト・組織・概念を指す名前を1つの正式名へ統合してください。
+
+要件：
+- 同一対象または同一の具体的テーマだと明確な場合だけ統合する。
+- personとproject/conceptなど、互換性のない種別を統合しない。
+- canonicalには入力一覧に存在する最も完全で一般的な日本語名をそのまま使い、翻訳や新しい名前を作らない。
+- JSONだけを出力し、統合が必要なグループだけを列挙する：
+{{"groups":[{{"canonical":"正式名","aliases":["別名1","別名2"]}}]}}
+
+エンティティ一覧：
+---
+{names}
+---
+""",
+    "en": """\
+Below are knowledge-entity names extracted from multiple meetings. Group names
+that clearly refer to the same person, project, organization, concept, or topic.
+
+Requirements:
+- Merge only names that clearly denote the same object or specific topic.
+- Never merge incompatible types such as person and project/concept.
+- Use the most complete common English name already present in the input as canonical; do not translate or invent names.
+- Output JSON only and list only groups that require merging:
+{{"groups":[{{"canonical":"Canonical name","aliases":["Alias 1","Alias 2"]}}]}}
+
+Entity list:
+---
+{names}
+---
+""",
+}
+
+_GRAPH_I18N_REQUIREMENT = """\
+
+重要な追加要件 / Additional required output:
+- Every entity must include i18n with natural Japanese, English, and Simplified Chinese name and desc.
+- Every relation must include i18n with a short natural label in all three languages.
+- Proper nouns may remain unchanged. Do not merely copy Chinese text into Japanese or English fields.
+- Keep the top-level name/desc/label in the requested output language, and use this exact JSON shape:
+{{"entities":[{{"name":"","type":"concept","desc":"","i18n":{{
+  "ja":{{"name":"","desc":""}},"en":{{"name":"","desc":""}},"zh":{{"name":"","desc":""}}
+ }}}}],"relations":[{{"from":"","to":"","label":"","i18n":{{
+  "ja":{{"label":""}},"en":{{"label":""}},"zh":{{"label":""}}
+ }}}}]}}
+"""
+
+_GRAPH_TRANSLATE_PROMPTS = {
+    "ja": "日本語",
+    "en": "English",
+    "zh": "Simplified Chinese",
+}
 
 _ACTION_RE = re.compile(
     r"(todo|action|next step|need to|should |must |will |follow.?up|deadline|"
@@ -554,8 +797,20 @@ def _parse_graph_json(raw: str) -> dict:
         etype = str(e.get("type", "concept")).strip().lower()
         if etype not in ENTITY_TYPES:
             etype = "concept"
-        ents.append({"name": name, "type": etype,
-                     "desc": str(e.get("desc", "")).strip()})
+        desc = str(e.get("desc", "")).strip()
+        i18n = {}
+        raw_i18n = e.get("i18n", {})
+        if isinstance(raw_i18n, dict):
+            for lang in ("ja", "en", "zh"):
+                value = raw_i18n.get(lang, {})
+                if isinstance(value, dict):
+                    lname = str(value.get("name", "")).strip()
+                    ldesc = str(value.get("desc", "")).strip()
+                    if lname or ldesc:
+                        i18n[lang] = {"name": lname or name,
+                                      "desc": ldesc or desc}
+        ents.append({"name": name, "type": etype, "desc": desc,
+                     "i18n": i18n})
     valid = {e["name"].lower() for e in ents}
     for r in data.get("relations", []):
         if not isinstance(r, dict):
@@ -563,8 +818,18 @@ def _parse_graph_json(raw: str) -> dict:
         a = str(r.get("from", "")).strip()
         b = str(r.get("to", "")).strip()
         if a.lower() in valid and b.lower() in valid and a.lower() != b.lower():
-            rels.append({"from": a, "to": b,
-                         "label": str(r.get("label", "")).strip()})
+            label = str(r.get("label", "")).strip()
+            i18n = {}
+            raw_i18n = r.get("i18n", {})
+            if isinstance(raw_i18n, dict):
+                for lang in ("ja", "en", "zh"):
+                    value = raw_i18n.get(lang, {})
+                    if isinstance(value, dict):
+                        translated = str(value.get("label", "")).strip()
+                        if translated:
+                            i18n[lang] = {"label": translated}
+            rels.append({"from": a, "to": b, "label": label,
+                         "i18n": i18n})
     return {"entities": ents, "relations": rels}
 
 
@@ -687,12 +952,24 @@ class Summarizer:
     _BLOCK_CHARS = 8000
     _MIN_BLOCK_CHARS = 1500
 
-    def _summarize_chunk(self, text: str, depth: int = 0) -> str:
+    @staticmethod
+    def _output_language(language: str, text: str = "") -> str:
+        """Resolve auto/unknown language to one of the prompt languages."""
+        if language in ("zh", "ja", "en"):
+            return language
+        if re.search(r"[\u3040-\u30ff]", text):
+            return "ja"
+        cjk = len(re.findall(r"[\u3400-\u9fff]", text))
+        latin = len(re.findall(r"[A-Za-z]", text))
+        return "en" if latin > cjk * 2 else "zh"
+
+    def _summarize_chunk(self, text: str, language: str,
+                         depth: int = 0) -> str:
         """Summarize one transcript block; if the server rejects it for being
         too long (HTTP 400 context overflow), split in half and merge."""
         try:
-            return self._generate(
-                _FULL_SUMMARY_PROMPT.format(transcript=text), num_ctx=16384)
+            prompt = _FULL_SUMMARY_PROMPTS[language]
+            return self._generate(prompt.format(transcript=text), num_ctx=16384)
         except Exception as e:
             too_long = "400" in str(e) or "context" in str(e).lower()
             if not (too_long and depth < 4 and len(text) > self._MIN_BLOCK_CHARS):
@@ -701,15 +978,17 @@ class Summarizer:
             if mid <= 0:
                 mid = len(text) // 2
             print(f"[notes] block too long, splitting ({len(text)} chars)")
-            a = self._summarize_chunk(text[:mid], depth + 1)
-            b = self._summarize_chunk(text[mid:], depth + 1)
+            a = self._summarize_chunk(text[:mid], language, depth + 1)
+            b = self._summarize_chunk(text[mid:], language, depth + 1)
             got = [p for p in (a, b) if p]
             if len(got) <= 1:
                 return got[0] if got else ""
             return self._generate(
-                _MERGE_PROMPT.format(parts="\n\n".join(got)), num_ctx=16384)
+                _MERGE_PROMPTS[language].format(parts="\n\n".join(got)),
+                num_ctx=16384)
 
-    def full_summary(self, transcript: str) -> str:
+    def full_summary(self, transcript: str, language: str = "auto",
+                     on_progress=None) -> str:
         """Layer 2: one detailed summary of the WHOLE transcript.
 
         Long transcripts are split into blocks internally (invisible in the
@@ -717,8 +996,12 @@ class Summarizer:
         transcript = transcript.strip()
         if not transcript:
             return ""
+        language = self._output_language(language, transcript)
         if len(transcript) <= self._SINGLE_PASS_CHARS:
-            return self._summarize_chunk(transcript)
+            result = self._summarize_chunk(transcript, language)
+            if on_progress:
+                on_progress(1.0)
+            return result
         lines = transcript.splitlines()
         blocks, cur, cur_len = [], [], 0
         for line in lines:
@@ -732,32 +1015,99 @@ class Summarizer:
         parts = []
         for i, block in enumerate(blocks, 1):
             print(f"[notes] Layer 2: summarizing part {i}/{len(blocks)}...")
-            part = self._summarize_chunk(block)
+            part = self._summarize_chunk(block, language)
             if part:
-                parts.append(f"（第 {i}/{len(blocks)} 部分）\n{part}")
+                part_label = {"ja": "パート", "en": "Part", "zh": "部分"}[language]
+                parts.append(f"({part_label} {i}/{len(blocks)})\n{part}")
+            if on_progress:
+                on_progress(0.85 * i / len(blocks))
         if not parts:
             return ""
         if len(parts) == 1:
             return parts[0].split("\n", 1)[-1]
-        return self._generate(
-            _MERGE_PROMPT.format(parts="\n\n".join(parts)), num_ctx=32768)
+        result = self._generate(
+            _MERGE_PROMPTS[language].format(parts="\n\n".join(parts)),
+            num_ctx=32768)
+        if on_progress:
+            on_progress(1.0)
+        return result
 
-    def one_page(self, full_summary: str) -> str:
+    def one_page(self, full_summary: str, language: str = "auto") -> str:
         """Layer 3: condense the Layer 2 full summary into one page."""
         if not full_summary.strip():
             return ""
+        language = self._output_language(language, full_summary)
         return self._generate(
-            _ONE_PAGE_PROMPT.format(summary=full_summary), num_ctx=16384)
+            _ONE_PAGE_PROMPTS[language].format(summary=full_summary),
+            num_ctx=16384)
 
-    def extract_entities(self, summary_md: str) -> dict:
+    def extract_entities(self, summary_md: str,
+                         language: str = "auto") -> dict:
         """Knowledge-graph pass: entities + relations from a session's notes.
 
         Returns {"entities": [...], "relations": [...]}; {} on failure."""
         if not summary_md.strip() or not self.available():
             return {}
-        raw = self._generate(
-            _ENTITIES_PROMPT.format(summary=summary_md), num_ctx=16384)
-        return _parse_graph_json(raw)
+        language = self._output_language(language, summary_md)
+        prompt = (_ENTITIES_PROMPTS[language].format(summary=summary_md)
+                  + _GRAPH_I18N_REQUIREMENT)
+        raw = self._generate(prompt, num_ctx=16384)
+        graph = _parse_graph_json(raw)
+        return self._complete_graph_i18n(graph, language)
+
+    def _complete_graph_i18n(self, graph: dict, base_language: str) -> dict:
+        """Fill missing graph display strings with index-stable translations."""
+        entities = graph.get("entities", [])
+        relations = graph.get("relations", [])
+        if not entities:
+            return graph
+        for entity in entities:
+            entity.setdefault("i18n", {})[base_language] = {
+                "name": entity.get("name", ""), "desc": entity.get("desc", "")}
+        for relation in relations:
+            relation.setdefault("i18n", {})[base_language] = {
+                "label": relation.get("label", "")}
+        for target, target_name in _GRAPH_TRANSLATE_PROMPTS.items():
+            missing_entities = any(
+                not e.get("i18n", {}).get(target, {}).get("name")
+                or not e.get("i18n", {}).get(target, {}).get("desc")
+                for e in entities)
+            missing_relations = any(
+                not r.get("i18n", {}).get(target, {}).get("label")
+                for r in relations)
+            if not (missing_entities or missing_relations):
+                continue
+            source = {
+                "entities": [{"index": i, "name": e.get("name", ""),
+                              "desc": e.get("desc", "")}
+                             for i, e in enumerate(entities)],
+                "relations": [{"index": i, "label": r.get("label", "")}
+                              for i, r in enumerate(relations)],
+            }
+            prompt = f"""Translate the JSON display strings into {target_name}.
+Keep every index unchanged. Preserve proper nouns. Return JSON only in exactly
+this shape: {{"entities":[{{"index":0,"name":"","desc":""}}],
+"relations":[{{"index":0,"label":""}}]}}.
+Input JSON:\n{json.dumps(source, ensure_ascii=False)}"""
+            try:
+                translated_raw = self._generate(prompt, num_ctx=16384)
+                start, end = translated_raw.find("{"), translated_raw.rfind("}")
+                translated = json.loads(translated_raw[start:end + 1])
+                for item in translated.get("entities", []):
+                    i = int(item.get("index", -1))
+                    if 0 <= i < len(entities):
+                        entities[i].setdefault("i18n", {})[target] = {
+                            "name": str(item.get("name", "")).strip(),
+                            "desc": str(item.get("desc", "")).strip(),
+                        }
+                for item in translated.get("relations", []):
+                    i = int(item.get("index", -1))
+                    if 0 <= i < len(relations):
+                        relations[i].setdefault("i18n", {})[target] = {
+                            "label": str(item.get("label", "")).strip()}
+            except Exception as e:
+                print(f"[notes] graph {target} translation failed ({e})")
+        return graph
 
     # --- built-in extractive fallback (no LLM, fully offline) --- #
     @staticmethod
@@ -826,14 +1176,26 @@ def _clean_md_headings(text: str) -> str:
                   flags=re.MULTILINE)
 
 
-def _layered_summaries(summarizer: Summarizer, transcript: str) -> tuple[str, str]:
+def _layered_summaries(summarizer: Summarizer, transcript: str,
+                       language: str = "auto", on_progress=None) -> tuple[str, str]:
     """Run Layer 2 (full summary) then Layer 3 (one page) over a finished
     transcript. Returns ("", "") when no LLM backend is available."""
     if not summarizer.available():
         return "", ""
     try:
-        layer2 = _clean_md_headings(summarizer.full_summary(transcript))
-        layer3 = _clean_md_headings(summarizer.one_page(layer2)) if layer2 else ""
+        if on_progress:
+            on_progress("layer2", 0.0)
+        layer2 = _clean_md_headings(
+            summarizer.full_summary(
+                transcript, language,
+                on_progress=(lambda value: on_progress("layer2", value))
+                if on_progress else None))
+        if on_progress:
+            on_progress("layer3", 0.0)
+        layer3 = _clean_md_headings(
+            summarizer.one_page(layer2, language)) if layer2 else ""
+        if on_progress:
+            on_progress("layer3", 1.0)
         return layer2, layer3
     except Exception as e:
         print(f"[notes] layered summarization failed ({e})")
@@ -859,7 +1221,13 @@ def build_entities(session_dir: Path, summarizer: Summarizer,
                 break
         except OSError:
             continue
-    graph = summarizer.extract_entities(summary)
+    language = "auto"
+    try:
+        language = json.loads(
+            (session_dir / "meta.json").read_text()).get("language", "auto")
+    except Exception:
+        pass
+    graph = summarizer.extract_entities(summary, language)
     if graph.get("entities"):
         try:
             out.write_text(json.dumps(graph, ensure_ascii=False))
@@ -868,7 +1236,8 @@ def build_entities(session_dir: Path, summarizer: Summarizer,
     return graph
 
 
-def build_entity_aliases(base_dir: Path, summarizer: Summarizer) -> dict:
+def build_entity_aliases(base_dir: Path, summarizer: Summarizer,
+                         language: str = "auto") -> dict:
     """LLM pass that clusters entity aliases/same-topic across all sessions
     into canonical names. Writes graph_aliases.json ({alias: canonical}) which
     aggregate_graph() then applies to merge nodes. Returns the alias map."""
@@ -878,8 +1247,9 @@ def build_entity_aliases(base_dir: Path, summarizer: Summarizer) -> dict:
     if len(pairs) < 3:
         return {}
     listing = "\n".join(f"- {name} ({etype})" for name, etype in pairs)
+    language = summarizer._output_language(language, listing)
     raw = summarizer._generate(
-        _ALIASES_PROMPT.format(names=listing), num_ctx=16384)
+        _ALIASES_PROMPTS[language].format(names=listing), num_ctx=16384)
     # tolerant JSON extraction (fences / surrounding prose)
     text = raw.strip()
     text = re.sub(r"^```(?:json)?\s*|\s*```$", "", text, flags=re.MULTILINE)
@@ -983,6 +1353,8 @@ class NotesSession:
         self._lock = threading.Lock()
         self._llm_layer2 = ""
         self._llm_final = ""
+        self._overall_progress = 0
+        self._progress_stage = "layer1"
 
         self._write_meta()
         self._write_transcript()
@@ -1096,7 +1468,8 @@ class NotesSession:
         self._write_notes()
         print("[notes] Summarizing...")
         self._llm_layer2, self._llm_final = _layered_summaries(
-            self.summarizer, transcript)
+            self.summarizer, transcript, self.language,
+            on_progress=self._set_summary_progress)
         self._write_notes()
         try:
             body = _summary_body(self._llm_layer2, self._llm_final, self.language) \
@@ -1115,7 +1488,8 @@ class NotesSession:
         print(f"[notes] Done: {self.dir / 'summary.md'}")
         try:
             build_entities(self.dir, self.summarizer, force=True)
-            build_entity_aliases(self.dir.parent, self.summarizer)
+            build_entity_aliases(
+                self.dir.parent, self.summarizer, self.language)
         except Exception as e:
             print(f"[notes] entity extraction failed ({e})")
         if self.on_done:
@@ -1174,6 +1548,11 @@ class NotesSession:
             pass
 
     def _write_meta(self):
+        total = self._consumed / self.sample_rate
+        layer1 = self._transcribed_until / total if total > 0 else 0
+        overall = (100 if self.status == "done" else self._overall_progress
+                   if self.status == "summarizing" else round(33 * layer1))
+        stage = "layer3" if self.status == "done" else self._progress_stage
         meta = {
             "id": self.id,
             "started": datetime.fromtimestamp(self.started).isoformat(timespec="seconds"),
@@ -1181,11 +1560,8 @@ class NotesSession:
             "duration": _fmt_ts(self._consumed / self.sample_rate),
             "recorded_seconds": round(self._consumed / self.sample_rate, 3),
             "transcribed_seconds": round(self._transcribed_until, 3),
-            "progress_percent": _progress_percent(
-                self._transcribed_until,
-                self._consumed / self.sample_rate,
-                self.status,
-            ),
+            "progress_percent": overall,
+            "progress_stage": stage,
             "progress_label": _progress_label(
                 self._transcribed_until,
                 self._consumed / self.sample_rate,
@@ -1201,6 +1577,13 @@ class NotesSession:
             (self.dir / "meta.json").write_text(json.dumps(meta, ensure_ascii=False))
         except OSError:
             pass
+
+    def _set_summary_progress(self, stage: str, fraction: float):
+        self._progress_stage = stage
+        self._overall_progress = round(
+            (33 + 34 * fraction) if stage == "layer2"
+            else (67 + 33 * fraction))
+        self._write_meta()
 
     def stop(self):
         """Stop recording; transcription drains and the summary is written
@@ -1250,6 +1633,8 @@ class ImportSession:
         self._lock = threading.Lock()
         self._llm_layer2 = ""
         self._llm_final = ""
+        self._overall_progress = 0
+        self._progress_stage = "layer1"
         if resume:
             self._load_chunk_records()
             self._rebuild_segments_from_chunks()
@@ -1317,7 +1702,8 @@ class ImportSession:
             self._write_notes()
             print(f"[notes] Summarizing '{self.name}'...")
             self._llm_layer2, self._llm_final = _layered_summaries(
-                self.summarizer, transcript)
+                self.summarizer, transcript, self.language,
+                on_progress=self._set_summary_progress)
             self._write_notes()
             body = _summary_body(self._llm_layer2, self._llm_final, self.language) \
                 or self.summarizer.summarize(transcript)
@@ -1331,7 +1717,8 @@ class ImportSession:
             self._write_notes()
             try:
                 build_entities(self.dir, self.summarizer, force=True)
-                build_entity_aliases(self.dir.parent, self.summarizer)
+                build_entity_aliases(
+                    self.dir.parent, self.summarizer, self.language)
             except Exception as e:
                 print(f"[notes] entity extraction failed ({e})")
             print(f"[notes] Done: {self.dir / 'summary.md'}")
@@ -1391,6 +1778,11 @@ class ImportSession:
             pass
 
     def _write_meta(self):
+        layer1 = (self._processed_until / self._duration
+                  if self._duration > 0 else 0)
+        overall = (100 if self.status == "done" else self._overall_progress
+                   if self.status == "summarizing" else round(33 * layer1))
+        stage = "layer3" if self.status == "done" else self._progress_stage
         meta = {
             "id": self.id,
             "started": datetime.fromtimestamp(self.started).isoformat(timespec="seconds"),
@@ -1398,11 +1790,8 @@ class ImportSession:
             "duration": _fmt_ts(self._duration),
             "recorded_seconds": round(self._duration, 3),
             "transcribed_seconds": round(self._processed_until, 3),
-            "progress_percent": _progress_percent(
-                self._processed_until,
-                self._duration,
-                self.status,
-            ),
+            "progress_percent": overall,
+            "progress_stage": stage,
             "progress_label": _progress_label(
                 self._processed_until,
                 self._duration,
@@ -1425,6 +1814,13 @@ class ImportSession:
             (self.dir / "meta.json").write_text(json.dumps(meta, ensure_ascii=False))
         except OSError:
             pass
+
+    def _set_summary_progress(self, stage: str, fraction: float):
+        self._progress_stage = stage
+        self._overall_progress = round(
+            (33 + 34 * fraction) if stage == "layer2"
+            else (67 + 33 * fraction))
+        self._write_meta()
 
     def _load_chunk_records(self):
         try:
@@ -1460,6 +1856,144 @@ class ImportSession:
                     segments.append((float(t), str(text)))
         with self._lock:
             self._segments = segments
+
+
+_MARKDOWN_PIPELINE_LOCK = threading.Lock()
+
+
+class MarkdownImportSession:
+    """A completed Layer-1 Markdown transcript summarized without Whisper."""
+
+    def __init__(self, base_dir: Path, src_path: Path, title: str,
+                 summarizer: Summarizer, on_done=None,
+                 language: str = "zh", session_id: str | None = None):
+        self.id = session_id or datetime.now().strftime("%Y%m%d-%H%M%S")
+        while not session_id and (base_dir / self.id).exists():
+            self.id += "0"
+        self.dir = base_dir / self.id
+        self.dir.mkdir(parents=True, exist_ok=True)
+        self.src_path = Path(src_path)
+        self.name = title or self.src_path.stem
+        self.summarizer = summarizer
+        self.on_done = on_done
+        self.language = language if language in ("zh", "ja", "en", "auto") else "zh"
+        self.started = time.time()
+        self.status = "queued"
+        self.error = ""
+        self._llm_layer2 = ""
+        self._llm_final = ""
+        self._overall_progress = 33
+        self._progress_stage = "layer2"
+        self._transcript = self.src_path.read_text(encoding="utf-8-sig").strip()
+        if not self._transcript:
+            raise ValueError("Markdown transcript is empty")
+        (self.dir / "transcript.md").write_text(
+            self._transcript + "\n", encoding="utf-8")
+        self._write_notes()
+        self._write_meta()
+        self._thread = threading.Thread(target=self._run, daemon=False)
+        self._thread.start()
+
+    def _run(self):
+        with _MARKDOWN_PIPELINE_LOCK:
+            self.status = "summarizing"
+            self._write_notes()
+            self._write_meta()
+            self._run_serialized()
+
+    def _run_serialized(self):
+        try:
+            print(f"[notes] Summarizing Markdown '{self.name}'...")
+            self._llm_layer2, self._llm_final = _layered_summaries(
+                self.summarizer, self._transcript, self.language,
+                on_progress=self._set_summary_progress)
+            body = _summary_body(
+                self._llm_layer2, self._llm_final, self.language) \
+                or self.summarizer.summarize(self._transcript)
+            started = datetime.fromtimestamp(self.started).strftime("%Y-%m-%d %H:%M")
+            head = (f"# {self.name}\n\n"
+                    f"_Markdown transcript · imported {started}"
+                    f" · summarized locally_\n\n")
+            (self.dir / "summary.md").write_text(
+                head + body + "\n", encoding="utf-8")
+            self.status = "done"
+            self._write_notes()
+            try:
+                build_entities(self.dir, self.summarizer, force=True)
+                build_entity_aliases(
+                    self.dir.parent, self.summarizer, self.language)
+            except Exception as e:
+                print(f"[notes] entity extraction failed ({e})")
+            print(f"[notes] Done: {self.dir / 'summary.md'}")
+        except Exception as e:
+            self.status = "error"
+            self.error = str(e)
+            self._write_notes()
+            print(f"[notes] Markdown import failed: {e}")
+        self._write_meta()
+        if self.on_done:
+            try:
+                self.on_done(self)
+            except Exception:
+                pass
+
+    def notes_md(self) -> str:
+        strings = _NOTES_TEXT.get(self.language, _NOTES_TEXT["zh"])
+        status_label = strings.get("status_" + self.status, self.status)
+        lines = [f"# {strings['running']} — {self.name}",
+                 f"_Markdown · {status_label}_", "",
+                 "<!-- vn-layer-1 -->",
+                 "## Layer 1 · " + strings["layer1"], self._transcript, "",
+                 "<!-- vn-layer-2 -->",
+                 "## Layer 2 · " + strings["layer2"]]
+        lines.append(self._llm_layer2 or strings["summarizing_l2"])
+        lines += ["", "<!-- vn-layer-3 -->",
+                  "## Layer 3 · " + strings["layer3"]]
+        lines.append(self._llm_final or strings["summarizing_l3"])
+        return "\n".join(lines).strip() + "\n"
+
+    def _write_notes(self):
+        try:
+            (self.dir / "notes.md").write_text(
+                self.notes_md(), encoding="utf-8")
+        except OSError:
+            pass
+
+    def _write_meta(self):
+        meta = {
+            "id": self.id,
+            "started": datetime.fromtimestamp(self.started).isoformat(timespec="seconds"),
+            "status": self.status,
+            "duration": "",
+            "recorded_seconds": 1,
+            "transcribed_seconds": 1,
+            "progress_percent": 100 if self.status == "done" else self._overall_progress,
+            "progress_stage": "layer3" if self.status == "done" else self._progress_stage,
+            "progress_label": ("Layer 1 imported · waiting for Qwen"
+                               if self.status == "queued" else
+                               "Layer 1 imported · summarizing"
+                               if self.status == "summarizing" else "Complete"),
+            "title": self.name,
+            "system_audio": False,
+            "source": "markdown",
+            "source_path": str(self.src_path),
+            "chunk_count": 1,
+            "done_chunk_count": 1,
+            "error": self.error,
+            "language": self.language,
+        }
+        try:
+            (self.dir / "meta.json").write_text(
+                json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+        except OSError:
+            pass
+
+    def _set_summary_progress(self, stage: str, fraction: float):
+        self._progress_stage = stage
+        self._overall_progress = round(
+            (33 + 34 * fraction) if stage == "layer2"
+            else (67 + 33 * fraction))
+        self._write_meta()
 
 
 def _fmt_ts(seconds: float) -> str:
@@ -1521,19 +2055,20 @@ def _progress_label(done: float, total: float, status: str,
 
 
 def _meta_with_progress_defaults(meta: dict) -> dict:
-    if "progress_percent" in meta and "progress_label" in meta:
-        return meta
     status = meta.get("status", "")
     duration = meta.get("duration", "")
     if status == "done":
         meta.setdefault("progress_percent", 100)
         meta.setdefault("progress_label", f"Complete · {duration}")
-    elif status == "summarizing":
-        meta.setdefault("progress_percent", 100)
+        meta.setdefault("progress_stage", "layer3")
+    elif status in ("queued", "summarizing"):
+        meta.setdefault("progress_percent", 33)
         meta.setdefault("progress_label", f"Transcript complete · summarizing {duration}")
+        meta.setdefault("progress_stage", "layer2")
     else:
         meta.setdefault("progress_percent", 0)
         meta.setdefault("progress_label", "Preparing audio...")
+        meta.setdefault("progress_stage", "layer1")
     return meta
 
 
@@ -1666,17 +2201,22 @@ def _logical_points(text: str, limit: int = 4) -> list[str]:
     return points
 
 
-def _section_topic(text: str, points: list[str]) -> str:
+def _section_topic(text: str, points: list[str], language: str = "zh") -> str:
+    labels = {
+        "ja": ("この区間の要点：", "この区間の主なキーワード：", "要約できる内容がまだ十分にありません。"),
+        "en": ("Main point of this section: ", "Main keywords in this section: ", "There is not enough content to summarize yet."),
+        "zh": ("本段核心是在说明：", "这一段的主要关键词：", "这一段还没有足够内容形成明确主题。"),
+    }.get(language, ("本段核心是在说明：", "这一段的主要关键词：", "这一段还没有足够内容形成明确主题。"))
     if points:
         lead = "；".join(points[:2])
-        return f"本段核心是在说明：{_trim_point(lead, 150)}"
+        return labels[0] + _trim_point(lead, 150)
     keywords = _keywords_from_text(text, limit=5)
     if keywords:
-        return f"这一段主要围绕相关主题展开，暂时只能提取到关键词：{', '.join(keywords[:4])}。"
-    return "这一段还没有足够内容形成明确主题。"
+        return labels[1] + ", ".join(keywords[:4])
+    return labels[2]
 
 
-def _section_note(section: dict) -> dict:
+def _section_note(section: dict, language: str = "zh") -> dict:
     start = float(section["start"])
     items = section["items"]
     text = "。".join(part for _, part in items)
@@ -1684,7 +2224,7 @@ def _section_note(section: dict) -> dict:
     if not sentences and text:
         sentences = [text]
     points = _logical_points(text, limit=4)
-    overview = _section_topic(text, points)
+    overview = _section_topic(text, points, language)
     todos = [
         _trim_point(s) for s in sentences
         if _TODO_RE.search(s) and len(_readable_text(s)) >= 6
@@ -1700,7 +2240,7 @@ def _section_note(section: dict) -> dict:
     ][:3]
     return {
         "start": start,
-        "overview": overview or "这一段还没有足够内容形成摘要。",
+        "overview": overview,
         "points": points,
         "valuable": valuable,
         "todos": todos,
@@ -1710,8 +2250,8 @@ def _section_note(section: dict) -> dict:
     }
 
 
-def _section_notes(sections: list[dict]) -> list[dict]:
-    return [_section_note(section) for section in sections]
+def _section_notes(sections: list[dict], language: str = "zh") -> list[dict]:
+    return [_section_note(section, language) for section in sections]
 
 
 def _final_note_from_sections(notes: list[dict], status: str, language: str = "zh") -> list[str]:
@@ -1782,7 +2322,7 @@ _NOTES_TEXT = {
     "zh": {
         "running": "运行中的笔记", "layer1": "原始转写片段", "layer2": "全文总结", "layer3": "一页纸",
         "status_recording": "正在录音和转写", "status_transcribing": "正在逐段转写",
-        "status_summarizing": "正在生成最终摘要", "status_done": "已完成", "status_error": "失败",
+        "status_queued": "等待本地LLM", "status_summarizing": "正在生成最终摘要", "status_done": "已完成", "status_error": "失败",
         "wait_first": "等待第一段语音转写完成。", "summarizing_l2": "Layer 1 已完成，正在用本地 LLM 生成全文总结…",
         "wait_l2": "等待 Layer 1 全部转写完成后，一次性生成全文总结。", "overview": "主要讲什么",
         "points": "核心逻辑点", "heuristic": "_（规则抽取版；启动 Ollama 后重跑可得到 LLM 全文总结。）_",
@@ -1792,7 +2332,7 @@ _NOTES_TEXT = {
     "ja": {
         "running": "作成中のノート", "layer1": "生の文字起こし", "layer2": "全文要約", "layer3": "1ページ要約",
         "status_recording": "録音・文字起こし中", "status_transcribing": "文字起こし中",
-        "status_summarizing": "最終要約を作成中", "status_done": "完了", "status_error": "エラー",
+        "status_queued": "ローカルLLMの順番待ち", "status_summarizing": "最終要約を作成中", "status_done": "完了", "status_error": "エラー",
         "wait_first": "最初の音声の文字起こしを待っています。", "summarizing_l2": "Layer 1が完了しました。ローカルLLMで全文要約を作成しています…",
         "wait_l2": "Layer 1の文字起こしがすべて完了すると、全文要約を作成します。", "overview": "主な内容",
         "points": "要点", "heuristic": "_（ルールベースの抽出版です。Ollamaを起動して再実行すると、LLMによる全文要約を生成できます。）_",
@@ -1838,7 +2378,7 @@ def _running_notes_md(title: str, segments: list[tuple[float, str]], status: str
     else:
         # No LLM available: fall back to the heuristic section digest.
         sections = _sections_from_segments(segments)
-        notes = _section_notes(sections)
+        notes = _section_notes(sections, language)
         for i, note in enumerate(notes, 1):
             lines.append(f"### {i}. {_fmt_ts(note['start'])}")
             lines.append(f"- **{strings['overview']}:** {note['overview']}")
@@ -1860,7 +2400,8 @@ def _running_notes_md(title: str, segments: list[tuple[float, str]], status: str
         lines.append(strings['wait_l3'])
     else:
         sections = _sections_from_segments(segments)
-        lines += _final_note_from_sections(_section_notes(sections), status, language)
+        lines += _final_note_from_sections(
+            _section_notes(sections, language), status, language)
     return "\n".join(lines) + "\n"
 
 
@@ -1914,6 +2455,34 @@ cursor:pointer;user-select:none}
 .stage:hover{border-color:var(--acc);background:var(--line)}
 .stage b{display:block;font-size:12px;color:var(--mut);font-weight:500}
 .stage.on{border-color:var(--acc)}
+.stage.active{border-color:var(--acc);background:var(--line);
+box-shadow:inset 0 0 0 1px var(--acc)}
+.stage.active b{color:var(--acc)}
+.session-info{padding:13px 16px;margin:14px 0 8px}
+.session-facts{display:flex;align-items:center;gap:8px 16px;flex-wrap:wrap}
+.session-fact{display:inline-flex;align-items:center;gap:6px;color:var(--mut);font-size:13px}
+.session-fact strong{color:var(--fg);font-weight:600}
+.session-info .progline{margin-top:10px}
+.layer-card{margin-top:8px;padding:0;overflow:hidden}
+.layer-head{padding:8px 12px 8px 18px;border-bottom:1px solid var(--line);font-size:13px;
+color:var(--mut);font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.layer-head button{padding:5px 11px;font-size:12px}
+.layer-panel{display:none;max-height:62vh;min-height:260px;overflow-y:auto;
+padding:8px 22px 22px;scrollbar-gutter:stable}
+.layer-panel.active{display:block}
+.layer-panel.editable:hover{box-shadow:inset 0 0 0 1px var(--acc);cursor:text}
+.editable-title{border-radius:6px;cursor:text;padding:1px 4px;margin-left:-4px}
+.editable-title:hover{background:var(--line)}
+.edit-input,.layer-editor{width:100%;background:var(--bg);color:var(--fg);
+border:1px solid var(--acc);border-radius:8px;font:inherit;outline:none}
+.edit-input{font-size:22px;font-weight:700;padding:5px 8px}
+.layer-editor{min-height:48vh;resize:vertical;padding:14px;line-height:1.55;
+font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:14px}
+.edit-actions{display:flex;align-items:center;gap:8px;padding:10px 0 0}
+.edit-hint{margin-left:auto;color:var(--mut);font-size:12px}
+.layer-files{padding:11px 18px;border-top:1px solid var(--line)}
+@media(max-width:600px){.layer-panel{max-height:66vh;min-height:220px;padding:6px 16px 18px}
+.session-info{padding:12px 14px}.session-facts{gap:5px 12px}}
 .prog{height:7px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:8px}
 .prog>i{display:block;height:100%;width:0;background:var(--acc)}
 .progline{margin-top:8px}
@@ -1961,44 +2530,47 @@ _I18N_JS = """
 const LANGS=[['zh','中文'],['ja','日本語'],['en','English']];
 const I18N={
  zh:{tagline:'录音 / 导入 → 转写 → 全文总结 → 一页纸',graph:'🕸️ 知识图谱',
-  start:'● 开始录音',stop:'■ 停止录音',addAudio:'添加音频',upload:'⬆ 上传音频',
+  start:'● 开始录音',stop:'■ 停止录音',addAudio:'添加音频或文字稿',upload:'⬆ 上传音频',uploadMd:'📄 上传Markdown',
   memos:'🎤 语音备忘录',langTitle:'转写语言；Auto 每段自动识别',
   delConfirm:'确认删除?',deleting:'删除中…',delTitle:'删除',imported:'已导入 · 打开',
   import:'导入',importing:'导入中…',noSessions:'还没有记录。开始录音、上传或导入语音备忘录。',
-  loadingMemos:'正在加载语音备忘录…',noMemos:'没有找到语音备忘录。',uploading:'正在上传',
-  uploadFail:'上传失败',couldNotStart:'无法开始',importFail:'导入失败',delFail:'删除失败',
+  loadingMemos:'正在加载语音备忘录…',noMemos:'没有找到语音备忘录。',uploading:'正在上传',uploadingMd:'正在导入Layer 1',
+  uploadFail:'上传失败',markdownFail:'Markdown导入失败',couldNotStart:'无法开始',importFail:'导入失败',delFail:'删除失败',delRecording:'请先停止录音再删除',edit:'点击编辑',save:'保存',cancel:'取消',saving:'保存中…',saved:'已保存',editFail:'保存失败',editAfterDone:'处理完成后可以编辑',invalidTitle:'请输入标题',
   allSessions:'← 全部记录',sessionTitle:'会话',transcriptH:'转写',waiting:'等待语音…',
   stopBtn:'■ 停止',resume:'重新转换',couldNotResume:'无法重新转换',
   l1:'原始转写',l2:'全文总结',l3:'一页纸',
-  st_recording:'录音中',st_transcribing:'转写中…',st_summarizing:'总结中…',st_done:'完成',st_error:'错误',
-  src_uploaded:'上传',src_memo:'语音备忘录',src_micspk:'麦克风 + 扬声器',src_mic:'麦克风',preparing:'正在准备音频…'},
+  stage_layer1:'Layer 1 · 转写',stage_layer2:'Layer 2 · 全文总结',stage_layer3:'Layer 3 · 一页纸',
+  st_recording:'录音中',st_transcribing:'转写中…',st_queued:'等待Qwen…',st_summarizing:'总结中…',st_done:'完成',st_error:'错误',
+  src_uploaded:'上传',src_markdown:'Markdown文字稿',src_memo:'语音备忘录',src_micspk:'麦克风 + 扬声器',src_mic:'麦克风',preparing:'正在准备音频…'},
  ja:{tagline:'録音 / 取り込み → 文字起こし → 全文要約 → 1ページ',graph:'🕸️ ナレッジグラフ',
-  start:'● 録音開始',stop:'■ 録音停止',addAudio:'音声を追加',upload:'⬆ アップロード',
+  start:'● 録音開始',stop:'■ 録音停止',addAudio:'音声・文字起こしを追加',upload:'⬆ 音声をアップロード',uploadMd:'📄 Markdownを追加',
   memos:'🎤 ボイスメモ',langTitle:'文字起こし言語；Auto は自動判定',
   delConfirm:'削除しますか?',deleting:'削除中…',delTitle:'削除',imported:'取り込み済み · 開く',
   import:'取り込む',importing:'取り込み中…',noSessions:'まだ記録がありません。録音・アップロード・ボイスメモから。',
-  loadingMemos:'ボイスメモを読み込み中…',noMemos:'ボイスメモが見つかりません。',uploading:'アップロード中',
-  uploadFail:'アップロード失敗',couldNotStart:'開始できません',importFail:'取り込み失敗',delFail:'削除に失敗',
+  loadingMemos:'ボイスメモを読み込み中…',noMemos:'ボイスメモが見つかりません。',uploading:'アップロード中',uploadingMd:'Layer 1を取り込み中',
+  uploadFail:'アップロード失敗',markdownFail:'Markdownの取り込みに失敗',couldNotStart:'開始できません',importFail:'取り込み失敗',delFail:'削除に失敗',delRecording:'録音を停止してから削除してください',edit:'クリックして編集',save:'保存',cancel:'キャンセル',saving:'保存中…',saved:'保存しました',editFail:'保存に失敗しました',editAfterDone:'処理完了後に編集できます',invalidTitle:'タイトルを入力してください',
   allSessions:'← すべての記録',sessionTitle:'セッション',transcriptH:'文字起こし',waiting:'音声を待機中…',
   stopBtn:'■ 停止',resume:'変換を再開',couldNotResume:'再開できません',
   l1:'生の文字起こし',l2:'全文要約',l3:'1ページ',
-  st_recording:'録音中',st_transcribing:'文字起こし中…',st_summarizing:'要約中…',st_done:'完了',st_error:'エラー',
-  src_uploaded:'アップロード',src_memo:'ボイスメモ',src_micspk:'マイク + スピーカー',src_mic:'マイク',preparing:'音声を準備中…'},
+  stage_layer1:'Layer 1 · 文字起こし',stage_layer2:'Layer 2 · 全文要約',stage_layer3:'Layer 3 · 1ページ要約',
+  st_recording:'録音中',st_transcribing:'文字起こし中…',st_queued:'Qwenの順番待ち…',st_summarizing:'要約中…',st_done:'完了',st_error:'エラー',
+  src_uploaded:'アップロード',src_markdown:'Markdown文字起こし',src_memo:'ボイスメモ',src_micspk:'マイク + スピーカー',src_mic:'マイク',preparing:'音声を準備中…'},
  en:{tagline:'Record / import → transcript → full summary → one page',graph:'🕸️ Knowledge graph',
-  start:'● Start recording',stop:'■ Stop recording',addAudio:'Add audio',upload:'⬆ Upload audio',
+  start:'● Start recording',stop:'■ Stop recording',addAudio:'Add audio or transcript',upload:'⬆ Upload audio',uploadMd:'📄 Add Markdown',
   memos:'🎤 Voice Memos',langTitle:'Transcription language; Auto detects each chunk',
   delConfirm:'Delete?',deleting:'Deleting…',delTitle:'Delete',imported:'Imported · Open',
   import:'Import',importing:'Importing…',noSessions:'No sessions yet. Record, upload, or import a Voice Memo.',
-  loadingMemos:'Loading Voice Memos…',noMemos:'No Voice Memos found.',uploading:'Uploading',
-  uploadFail:'upload failed',couldNotStart:'could not start',importFail:'import failed',delFail:'delete failed',
+  loadingMemos:'Loading Voice Memos…',noMemos:'No Voice Memos found.',uploading:'Uploading',uploadingMd:'Importing Layer 1',
+  uploadFail:'upload failed',markdownFail:'Markdown import failed',couldNotStart:'could not start',importFail:'import failed',delFail:'delete failed',delRecording:'Stop recording before deleting',edit:'Click to edit',save:'Save',cancel:'Cancel',saving:'Saving…',saved:'Saved',editFail:'Save failed',editAfterDone:'Editing is available after processing finishes',invalidTitle:'Enter a title',
   allSessions:'← all sessions',sessionTitle:'Session',transcriptH:'Transcript',waiting:'Waiting for speech…',
   stopBtn:'■ Stop',resume:'Resume conversion',couldNotResume:'could not resume',
   l1:'Raw transcript',l2:'Full summary',l3:'One page',
-  st_recording:'Recording',st_transcribing:'Transcribing…',st_summarizing:'Summarizing…',st_done:'Done',st_error:'Error',
-  src_uploaded:'uploaded',src_memo:'Voice Memo',src_micspk:'mic + speakers',src_mic:'mic',preparing:'Preparing audio…'}
+  stage_layer1:'Layer 1 · Transcript',stage_layer2:'Layer 2 · Full summary',stage_layer3:'Layer 3 · One page',
+  st_recording:'Recording',st_transcribing:'Transcribing…',st_queued:'Waiting for Qwen…',st_summarizing:'Summarizing…',st_done:'Done',st_error:'Error',
+  src_uploaded:'uploaded',src_markdown:'Markdown transcript',src_memo:'Voice Memo',src_micspk:'mic + speakers',src_mic:'mic',preparing:'Preparing audio…'}
 };
 function curLang(){let l=localStorage.getItem('vn_lang');if(!l){const n=(navigator.language||'zh').toLowerCase();l=n.startsWith('ja')?'ja':n.startsWith('en')?'en':'zh';}return I18N[l]?l:'zh';}
-function setLang(l){localStorage.setItem('vn_lang',l);if(!localStorage.getItem('vn_transcription_explicit'))localStorage.setItem('vn_transcription_lang',l);location.reload();}
+function setLang(l){localStorage.setItem('vn_lang',l);localStorage.setItem('vn_transcription_lang',l);localStorage.removeItem('vn_transcription_explicit');location.reload();}
 function t(k){const d=I18N[curLang()]||I18N.zh;return (k in d)?d[k]:(k in I18N.zh?I18N.zh[k]:k);}
 function transcriptionLang(){return localStorage.getItem('vn_transcription_lang')||curLang();}
 function setTranscriptionLang(l){localStorage.setItem('vn_transcription_lang',l);localStorage.setItem('vn_transcription_explicit','1');}
@@ -2006,13 +2578,13 @@ function langSelect(){const c=curLang();return '<select onchange="setLang(this.v
 """
 
 _STATUS_JS = """
-function stat(s){const m={recording:'rec',transcribing:'sum',summarizing:'sum',done:'done',error:'err'};
+function stat(s){const m={recording:'rec',transcribing:'sum',queued:'sum',summarizing:'sum',done:'done',error:'err'};
   return [m[s]||'done', t('st_'+s)];}
 function esc(t){return (t||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}
 function lang(){return encodeURIComponent(document.getElementById('lang')?.value||transcriptionLang())}
 function progress(d){
   const pct=Math.max(0,Math.min(100,Number(d.progress_percent||0)));
-  const label=esc(d.status?t('st_'+d.status):t('preparing'))+(d.duration?' · '+esc(d.duration):'');
+  const label=esc(d.progress_stage?t('stage_'+d.progress_stage):(d.status?t('st_'+d.status):t('preparing')))+(d.duration?' · '+esc(d.duration):'');
   return `<div class=progline><div class=mut>${label} · ${pct}%</div><div class=prog><i style="width:${pct}%"></i></div></div>`;
 }
 """
@@ -2039,7 +2611,10 @@ _INDEX_HTML = """<!doctype html><meta charset=utf-8>
     </select>
     <input type=file id=file accept="audio/*,.m4a,.mp3,.wav,.aac,.flac,.ogg,.mp4"
       style=display:none onchange=upload(this)>
+    <input type=file id=markdown accept=".md,.markdown,text/markdown,text/plain"
+      style=display:none onchange=uploadMarkdown(this)>
     <button class=b2 id=uploadBtn onclick="document.getElementById('file').click()"></button>
+    <button class=b2 id=markdownBtn onclick="document.getElementById('markdown').click()"></button>
     <button class=b2 id=memosBtn onclick=loadMemos()></button>
    </div></div>
   <div id=upmsg class=mut></div>
@@ -2053,6 +2628,7 @@ function applyStatic(){
   document.getElementById('graphlink').textContent=t('graph');
   document.getElementById('addAudioLabel').textContent=t('addAudio');
   document.getElementById('uploadBtn').textContent=t('upload');
+  document.getElementById('markdownBtn').textContent=t('uploadMd');
   document.getElementById('memosBtn').textContent=t('memos');
   document.getElementById('lang').title=t('langTitle');
   document.getElementById('lang').value=transcriptionLang();
@@ -2067,7 +2643,7 @@ async function refresh(){
   btn.className=live?'stop':'';
   document.getElementById('list').innerHTML=d.map(s=>{
     const [cls,lab]=stat(s.status);
-    const icon=s.source==='upload'?'📁 ':s.source==='memo'?'🎤 ':'';
+    const icon=s.source==='markdown'?'📄 ':s.source==='upload'?'📁 ':s.source==='memo'?'🎤 ':'';
     return `<a class=item href="/s/${s.id}"><div class=row>
       <div><b>${icon}${esc(s.title)}</b><div class=mut>${s.started.replace('T',' ')} · ${s.duration}</div></div>
       <div style="display:flex;align-items:center;gap:4px">
@@ -2094,7 +2670,7 @@ async function del(ev,id){
   const r=await fetch('/api/delete',{method:'POST',
     headers:{'Content-Type':'application/json'},body:JSON.stringify({id})});
   const j=await r.json();
-  if(j.ok){refresh();} else {el.textContent='🗑';el.dataset.armed='';el.classList.remove('arm');alert(j.error||t('delFail'));}
+  if(j.ok){refresh();} else {el.textContent='🗑';el.dataset.armed='';el.classList.remove('arm');alert(j.error_code?t(j.error_code):(j.error||t('delFail')));}
 }
 async function upload(inp){
   const f=inp.files[0];if(!f)return;
@@ -2104,6 +2680,16 @@ async function upload(inp){
   const d=await r.json();
   if(d.id)location='/s/'+d.id;
   else document.getElementById('upmsg').textContent=d.error||t('uploadFail');
+  inp.value='';
+}
+async function uploadMarkdown(inp){
+  const f=inp.files[0];if(!f)return;
+  document.getElementById('upmsg').textContent=t('uploadingMd')+' '+f.name+'…';
+  const r=await fetch('/api/upload-markdown?name='+encodeURIComponent(f.name)+'&language='+lang(),
+    {method:'POST',body:f});
+  const d=await r.json();
+  if(d.id)location='/s/'+d.id;
+  else document.getElementById('upmsg').textContent=d.error||t('markdownFail');
   inp.value='';
 }
 async function loadMemos(){
@@ -2136,7 +2722,7 @@ _SESSION_HTML = """<!doctype html><meta charset=utf-8>
 <div class=wrap>
  <div class=row><div>
    <div class=mut><a id=backlink href=/></a></div>
-   <h1 id=title></h1><div class=mut id=sub></div></div>
+   <h1 id=title class=editable-title onclick=beginTitleEdit()></h1><div class=mut id=sub></div></div>
   <div style="text-align:right">
    <div id=uilang style="margin-bottom:8px"></div>
    <div id=pill class=pill><span class=dot></span><span id=plabel>…</span></div><br>
@@ -2145,27 +2731,36 @@ _SESSION_HTML = """<!doctype html><meta charset=utf-8>
    <button id=resume class=b2 style="margin-top:8px;display:none"
      onclick="resumeImport()"></button>
   </div></div>
- <div id=progress></div>
+ <div class="card session-info">
+  <div id=sessionFacts class=session-facts></div>
+  <div id=progress></div>
+ </div>
  <div class=card id=errcard style="display:none;color:var(--rec)"></div>
  <div class=pipeline>
-   <div id=st1 class=stage onclick="jump(1)"><b>Layer 1</b><span id=l1lab></span></div>
-   <div id=st2 class=stage onclick="jump(2)"><b>Layer 2</b><span id=l2lab></span></div>
-   <div id=st3 class=stage onclick="jump(3)"><b>Layer 3</b><span id=l3lab></span></div>
+   <div id=st1 class=stage onclick="showLayer(1)"><b>Layer 1</b><span id=l1lab></span></div>
+   <div id=st2 class=stage onclick="showLayer(2)"><b>Layer 2</b><span id=l2lab></span></div>
+   <div id=st3 class=stage onclick="showLayer(3)"><b>Layer 3</b><span id=l3lab></span></div>
  </div>
- <div class=card id=notescard style=display:none><div id=notes class=md></div>
-  <div class=files style="margin-top:10px">
-   <a href="/f/__SID__/notes.md" download>⬇ notes.md</a></div></div>
- <div class=card id=sumcard style=display:none><div id=summary class=md></div>
-  <div class=files style="margin-top:10px">
+ <div class="card layer-card">
+  <div class=layer-head><span id=layerTitle></span>
+   <button id=editLayerBtn class=b2 onclick="beginLayerEdit(event,activeLayer)"></button>
+  </div>
+  <div id=layer1 class="layer-panel md active" onclick="beginLayerEdit(event,1)"><p class=mut id=waitmsg></p></div>
+  <div id=layer2 class="layer-panel md" onclick="beginLayerEdit(event,2)"></div>
+  <div id=layer3 class="layer-panel md" onclick="beginLayerEdit(event,3)"></div>
+  <div class="files layer-files">
+   <a href="/f/__SID__/notes.md" download>⬇ notes.md</a>
    <a href="/f/__SID__/summary.md" download>⬇ summary.md</a>
    <a href="/f/__SID__/transcript.md" download>⬇ transcript.md</a>
-   <a href="/f/__SID__/audio.wav" download>⬇ audio.wav</a></div></div>
- <h2 id=transcriptH></h2>
- <div class="card tr"><div id=transcript class=md>
-   <p class=mut id=waitmsg></p></div></div>
+   <a id=audioDownload href="/f/__SID__/audio.wav" download>⬇ audio.wav</a>
+  </div>
+ </div>
 </div>
 <script>__MDJS__ __I18NJS__ __STATUSJS__
 const sid=__SIDJS__;let last='',lastNotes='';
+let activeLayer=Number(localStorage.getItem('vn_layer_'+sid)||1);
+let layerContent={1:'',2:'',3:''};
+let currentTitle='',currentStatus='',editingLayer=0,editingTitle=false,saveMessage='';
 function applyStatic(){
   document.getElementById('uilang').innerHTML=langSelect();
   document.getElementById('backlink').textContent=t('allSessions');
@@ -2174,40 +2769,107 @@ function applyStatic(){
   document.getElementById('l1lab').textContent=t('l1');
   document.getElementById('l2lab').textContent=t('l2');
   document.getElementById('l3lab').textContent=t('l3');
-  document.getElementById('transcriptH').textContent=t('transcriptH');
+  document.getElementById('editLayerBtn').textContent='✎ '+t('edit');
   document.getElementById('waitmsg').textContent=t('waiting');
+  showLayer(activeLayer);
 }
 function stages(s,hasTranscript,hasNotes){
-  document.getElementById('st1').className='stage '+(hasTranscript?'on':'');
-  document.getElementById('st2').className='stage '+(hasNotes?'on':'');
-  document.getElementById('st3').className='stage '+(s==='done'?'on':'');
+  document.getElementById('st1').className='stage '+(hasTranscript?'on ':'')+(activeLayer===1?'active':'');
+  document.getElementById('st2').className='stage '+(hasNotes?'on ':'')+(activeLayer===2?'active':'');
+  document.getElementById('st3').className='stage '+(s==='done'?'on ':'')+(activeLayer===3?'active':'');
 }
-function scrollToEl(el){
-  // Instant scroll (smooth is unreliable over the long notes card) with a
-  // small top margin so the heading isn't flush against the window edge.
-  const y=el.getBoundingClientRect().top+window.scrollY-16;
-  window.scrollTo(0,Math.max(0,y));
+function splitLayers(src){
+  const out={1:'',2:'',3:''};
+  const text=String(src||'');
+  let hits=[...text.matchAll(/^<!-- vn-layer-([123]) -->$/gm)];
+  if(!hits.length)hits=[...text.matchAll(/^## Layer ([123])[^\\n]*$/gm)];
+  hits.forEach((hit,i)=>{
+    const start=hit.index+hit[0].length;
+    const end=i+1<hits.length?hits[i+1].index:text.length;
+    out[Number(hit[1])]=text.slice(start,end).replace(/^\\s*## Layer [123][^\\n]*\\n?/, '').trim();
+  });
+  return out;
 }
-function jump(n){
-  // Scroll to the "## Layer n" heading inside the rendered notes.
-  const card=document.getElementById('notescard');
-  if(card&&card.style.display!=='none'){
-    for(const h of card.querySelectorAll('h3')){
-      if(h.textContent.trim().indexOf('Layer '+n)===0){scrollToEl(h);return;}
-    }
-    scrollToEl(card);return;
+function renderLayers(){
+  if(editingLayer)return;
+  for(let n=1;n<=3;n++){
+    const el=document.getElementById('layer'+n);
+    const stick=el.scrollTop+el.clientHeight>=el.scrollHeight-40;
+    el.innerHTML=md(layerContent[n])||('<p class=mut>'+t(n===1?'waiting':n===2?'l2':'l3')+'</p>');
+    el.classList.toggle('editable',currentStatus==='done'||currentStatus==='error');
+    if(stick)el.scrollTop=el.scrollHeight;
   }
-  // Layer 1 with no notes yet -> the live transcript card.
-  const tr=document.getElementById('transcript');
-  if(tr)scrollToEl(tr.closest('.card'));
+}
+function canEdit(){
+  if(currentStatus==='done'||currentStatus==='error')return true;
+  alert(t('editAfterDone'));return false;
+}
+function beginTitleEdit(){
+  if(editingTitle||!canEdit())return;
+  editingTitle=true;const el=document.getElementById('title');
+  el.onclick=null;el.textContent='';const inp=document.createElement('input');
+  inp.id='titleEdit';inp.className='edit-input';inp.maxLength=200;inp.value=currentTitle;el.appendChild(inp);
+  inp.focus();inp.select();
+  inp.onclick=e=>e.stopPropagation();
+  inp.onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();saveTitle()}if(e.key==='Escape')cancelTitle()};
+  inp.onblur=()=>setTimeout(()=>{if(editingTitle)saveTitle()},0);
+}
+function cancelTitle(){editingTitle=false;const el=document.getElementById('title');el.textContent=currentTitle;el.onclick=beginTitleEdit}
+async function saveTitle(){
+  const inp=document.getElementById('titleEdit');if(!inp)return;
+  const value=inp.value.trim();if(!value){alert(t('invalidTitle'));inp.focus();return}
+  const ok=await saveEdits(value);if(ok){currentTitle=value;cancelTitle()}
+}
+function beginLayerEdit(ev,n){
+  if(editingLayer||ev.target.closest('a,button,input,textarea')||!canEdit())return;
+  editingLayer=n;const el=document.getElementById('layer'+n);el.classList.remove('md','editable');
+  el.innerHTML=`<textarea id=layerEditor class=layer-editor></textarea><div class=edit-actions>`+
+    `<button onclick=saveLayer(event)>${t('save')}</button><button class=b2 onclick=cancelLayer(event)>${t('cancel')}</button>`+
+    `<span class=edit-hint>Markdown · Ctrl/⌘ + Enter</span></div>`;
+  const ta=document.getElementById('layerEditor');ta.value=layerContent[n];ta.focus();
+  ta.onkeydown=e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter')saveLayer(e);if(e.key==='Escape')cancelLayer(e)};
+}
+function cancelLayer(ev){if(ev)ev.stopPropagation();const n=editingLayer;editingLayer=0;
+  document.getElementById('layer'+n).classList.add('md');renderLayers()}
+async function saveLayer(ev){
+  if(ev)ev.stopPropagation();const n=editingLayer,ta=document.getElementById('layerEditor');if(!n||!ta)return;
+  const value=ta.value;const ok=await saveEdits(currentTitle,{...layerContent,[n]:value});
+  if(ok){layerContent[n]=value;cancelLayer(ev)}
+}
+async function saveEdits(title,layers=layerContent){
+  const r=await fetch('/api/edit',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({sid,title,layers})});
+  let d={};try{d=await r.json()}catch(_e){}
+  if(!r.ok||!d.ok){alert(d.error_code?t(d.error_code):(d.error||t('editFail')));return false}
+  last='';lastNotes='';return true;
+}
+function showLayer(n){
+  activeLayer=n;localStorage.setItem('vn_layer_'+sid,String(n));
+  for(let i=1;i<=3;i++)document.getElementById('layer'+i).classList.toggle('active',i===n);
+  document.getElementById('layerTitle').textContent='Layer '+n+' · '+t('l'+n);
+  document.getElementById('editLayerBtn').style.display=
+    (currentStatus==='done'||currentStatus==='error')?'':'none';
+  for(let i=1;i<=3;i++)document.getElementById('st'+i).classList.toggle('active',i===n);
 }
 async function refresh(){
   const r=await fetch('/api/s/'+sid);if(!r.ok)return;const d=await r.json();
-  document.getElementById('title').textContent=d.title||t('sessionTitle');
-  document.getElementById('sub').textContent=d.started.replace('T',' ')+' · '+d.duration+
-    ' · '+(d.source==='upload'?t('src_uploaded'):d.source==='memo'?t('src_memo'):
-     d.system_audio?t('src_micspk'):t('src_mic'));
+  currentStatus=d.status;currentTitle=d.title||t('sessionTitle');
+  document.getElementById('editLayerBtn').style.display=
+    (currentStatus==='done'||currentStatus==='error')?'':'none';
+  if(!editingTitle){const titleEl=document.getElementById('title');titleEl.textContent=currentTitle;titleEl.onclick=beginTitleEdit}
+  const source=d.source==='upload'?t('src_uploaded'):d.source==='markdown'?t('src_markdown'):d.source==='memo'?t('src_memo'):
+    d.system_audio?t('src_micspk'):t('src_mic');
+  const started=d.started.replace('T',' ');
+  document.getElementById('sub').textContent=[started,d.duration,source].filter(Boolean).join(' · ');
+  const langName={ja:'日本語',en:'English',zh:'中文',auto:'Auto'}[d.language]||d.language||'Auto';
+  document.getElementById('sessionFacts').innerHTML=
+    `<span class=session-fact>📄 <strong>${esc(d.title||t('sessionTitle'))}</strong></span>`+
+    `<span class=session-fact>🕒 ${esc(started)}</span>`+
+    (d.duration?`<span class=session-fact>⏱ ${esc(d.duration)}</span>`:'')+
+    `<span class=session-fact>🎧 ${esc(source)}</span>`+
+    `<span class=session-fact>🌐 ${esc(langName)}</span>`;
   document.getElementById('progress').innerHTML=progress(d);
+  document.getElementById('audioDownload').style.display=d.source==='markdown'?'none':'';
   const [cls,lab]=stat(d.status);
   document.getElementById('pill').className='pill '+cls;
   document.getElementById('plabel').textContent=lab;
@@ -2218,16 +2880,12 @@ async function refresh(){
   if(d.status==='error'){ec.style.display='';ec.textContent=d.error||'failed';}
   stages(d.status,!!d.transcript,!!d.notes);
   if(d.notes&&d.notes!==lastNotes){lastNotes=d.notes;
-    document.getElementById('notescard').style.display='';
-    document.getElementById('notes').innerHTML=md(d.notes);}
+    const parsed=splitLayers(d.notes);
+    for(let n=1;n<=3;n++)if(parsed[n])layerContent[n]=parsed[n];
+    renderLayers();}
   if(d.transcript!==last){last=d.transcript;
-    const el=document.getElementById('transcript');
-    const box=el.parentElement;
-    const stick=box.scrollTop+box.clientHeight>=box.scrollHeight-40;
-    el.innerHTML=md(d.transcript)||('<p class=mut>'+t('waiting')+'</p>');
-    if(stick)box.scrollTop=box.scrollHeight;}
-  if(d.summary){document.getElementById('sumcard').style.display='';
-    document.getElementById('summary').innerHTML=md(d.summary);}
+    if(!layerContent[1])layerContent[1]=d.transcript;
+    renderLayers();}
   setTimeout(refresh,(d.status==='done'||d.status==='error')?10000:1500);
 }
 async function resumeImport(){
@@ -2275,6 +2933,35 @@ _FILES = {"summary.md": "text/markdown; charset=utf-8",
           "chunks.json": "application/json; charset=utf-8",
           "audio.wav": "audio/wav"}
 _MAX_UPLOAD = 2 * 1024 ** 3   # 2 GB
+_MAX_EDIT_BODY = 8 * 1024 ** 2
+_MAX_LAYER_CHARS = 2 * 1024 ** 2
+
+
+def _atomic_write_text(path: Path, text: str):
+    """Replace a UTF-8 text file without exposing a partially written file."""
+    tmp = path.with_name(path.name + ".edit-tmp")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.replace(path)
+
+
+def _edited_notes_md(title: str, layers: dict[int, str], language: str) -> str:
+    strings = _NOTES_TEXT.get(language, _NOTES_TEXT["zh"])
+    lines = [f"# {title}", "_Manually edited_", ""]
+    for number, key in ((1, "layer1"), (2, "layer2"), (3, "layer3")):
+        lines += [f"<!-- vn-layer-{number} -->",
+                  f"## Layer {number} · {strings[key]}",
+                  layers[number].strip(), ""]
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def _edited_summary_md(title: str, layer2: str, layer3: str,
+                       language: str) -> str:
+    heading = {"ja": "# 全文要約（Layer 2）",
+               "en": "# Full summary (Layer 2)"}.get(
+                   language, "# 详细总结（Layer 2）")
+    return (f"# {title}\n\n_Manually edited_\n\n"
+            f"{layer3.strip()}\n\n---\n\n{heading}\n\n"
+            f"{layer2.strip()}\n")
 
 
 class NotesServer:
@@ -2296,13 +2983,25 @@ class NotesServer:
         self.httpd = None
         self.url = None
         self._memos: list[dict] = []   # last listing; imports pick by index
+        self._edit_lock = threading.Lock()
 
     def _session_meta(self, sid: str) -> dict | None:
         active = self.controller.active()
         if active and active.id == sid:
             active._write_meta()
         try:
-            meta = json.loads((self.base_dir / sid / "meta.json").read_text())
+            session_dir = self.base_dir / sid
+            meta = json.loads((session_dir / "meta.json").read_text())
+            # Older Markdown jobs could finish their output and then be
+            # interrupted during graph generation, leaving stale 60% metadata.
+            if meta.get("source") == "markdown" and meta.get("status") == "summarizing":
+                try:
+                    summary = (session_dir / "summary.md").read_text()
+                except OSError:
+                    summary = ""
+                if summary and "Built-in extractive summary" not in summary:
+                    meta.update(status="done", progress_percent=100,
+                                progress_stage="layer3", progress_label="Complete")
             return _meta_with_progress_defaults(meta)
         except Exception:
             return None
@@ -2381,15 +3080,68 @@ class NotesServer:
         active = self.controller.active()
         if active and getattr(active, "id", None) == sid \
                 and getattr(active, "status", "") == "recording":
-            return {"error": "正在录音，请先停止再删除"}
+            return {"error_code": "delRecording"}
         target = (self.base_dir / sid).resolve()
         if target.parent != self.base_dir.resolve() or not target.is_dir():
             return {"error": "session not found"}
         try:
             shutil.rmtree(target)
         except OSError as e:
-            return {"error": f"删除失败: {e}"}
+            return {"error": str(e), "error_code": "delFail"}
         return {"ok": True}
+
+    def _edit_session(self, body: dict) -> tuple[dict, int]:
+        """Persist a title or all three layers while keeping session files aligned."""
+        sid = body.get("sid")
+        if not isinstance(sid, str) or not _ID_RE.match(sid):
+            return {"error": "bad session id"}, 400
+        target = (self.base_dir / sid).resolve()
+        if target.parent != self.base_dir.resolve() or not target.is_dir():
+            return {"error": "session not found"}, 404
+        try:
+            meta = json.loads((target / "meta.json").read_text(encoding="utf-8"))
+        except Exception:
+            return {"error": "session metadata is unreadable"}, 500
+        if meta.get("source") == "markdown" and meta.get("status") == "summarizing":
+            try:
+                existing_summary = (target / "summary.md").read_text(encoding="utf-8")
+            except OSError:
+                existing_summary = ""
+            if existing_summary and "Built-in extractive summary" not in existing_summary:
+                meta.update(status="done", progress_percent=100,
+                            progress_stage="layer3", progress_label="Complete")
+        if meta.get("status") not in ("done", "error"):
+            return {"error_code": "editAfterDone"}, 409
+
+        title = body.get("title", meta.get("title", ""))
+        if not isinstance(title, str):
+            return {"error": "invalid title"}, 400
+        title = " ".join(title.split()).strip()
+        if not title or len(title) > 200:
+            return {"error_code": "invalidTitle"}, 400
+
+        raw_layers = body.get("layers")
+        if not isinstance(raw_layers, dict):
+            return {"error": "layers are required"}, 400
+        layers = {}
+        for number in (1, 2, 3):
+            value = raw_layers.get(str(number), raw_layers.get(number))
+            if not isinstance(value, str) or len(value) > _MAX_LAYER_CHARS:
+                return {"error": f"invalid Layer {number}"}, 400
+            layers[number] = value.replace("\x00", "").strip()
+
+        language = meta.get("language", "zh")
+        with self._edit_lock:
+            meta["title"] = title
+            meta["manually_edited"] = True
+            _atomic_write_text(target / "transcript.md", layers[1] + "\n")
+            _atomic_write_text(target / "notes.md",
+                               _edited_notes_md(title, layers, language))
+            _atomic_write_text(target / "summary.md", _edited_summary_md(
+                title, layers[2], layers[3], language))
+            _atomic_write_text(target / "meta.json",
+                               json.dumps(meta, ensure_ascii=False))
+        return {"ok": True, "title": title}, 200
 
     def start(self) -> str | None:
         server = self
@@ -2410,10 +3162,12 @@ class NotesServer:
                 self._send(code, json.dumps(obj, ensure_ascii=False),
                            "application/json; charset=utf-8")
 
-            def _body_json(self) -> dict:
+            def _body_json(self, limit: int = 1 << 16) -> dict:
                 try:
                     length = int(self.headers.get("Content-Length") or 0)
-                    return json.loads(self.rfile.read(min(length, 1 << 16)) or b"{}")
+                    if length < 0 or length > limit:
+                        return {}
+                    return json.loads(self.rfile.read(length) or b"{}")
                 except Exception:
                     return {}
 
@@ -2479,6 +3233,10 @@ class NotesServer:
                 if parts == ["api", "delete"]:
                     return self._json(
                         server._delete_session(self._body_json().get("id")))
+                if parts == ["api", "edit"]:
+                    result, code = server._edit_session(
+                        self._body_json(_MAX_EDIT_BODY))
+                    return self._json(result, code)
                 if parts == ["api", "upload"]:
                     qs = parse_qs(url.query)
                     name = (qs.get("name") or ["upload"])[0]
@@ -2492,6 +3250,23 @@ class NotesServer:
                         dest, Path(name).stem, "upload")
                     return self._json({"id": sid} if sid else
                                       {"error": "model still loading — retry shortly"})
+                if parts == ["api", "upload-markdown"]:
+                    qs = parse_qs(url.query)
+                    name = (qs.get("name") or ["transcript.md"])[0]
+                    language = (qs.get("language") or [""])[0]
+                    if Path(name).suffix.lower() not in (".md", ".markdown"):
+                        return self._json({"error": "Markdown files only"}, 400)
+                    server._set_language(language)
+                    try:
+                        dest = server._save_upload(self, name)
+                    except Exception as e:
+                        return self._json({"error": f"upload failed: {e}"})
+                    if not hasattr(server.controller, "import_markdown"):
+                        return self._json({"error": "Markdown import unavailable"}, 501)
+                    sid = server.controller.import_markdown(
+                        dest, Path(name).stem)
+                    return self._json({"id": sid} if sid else
+                                      {"error": "invalid or empty Markdown"})
                 if parts == ["api", "voicememos", "import"]:
                     body = self._body_json()
                     i = body.get("i")
