@@ -2409,8 +2409,8 @@ def _running_notes_md(title: str, segments: list[tuple[float, str]], status: str
 # Localhost web UI
 # --------------------------------------------------------------------------- #
 _PAGE_CSS = """
-:root{--bg:#0f1115;--fg:#e6e8ee;--mut:#8a90a2;--card:#171a21;--line:#262b36;
---acc:#6c8cff;--rec:#f43f5e;--ok:#34d399;--amb:#fbbf24}
+:root{--bg:#0b0e14;--fg:#e8ecf4;--mut:#929caf;--card:#161c27;--panel:#111620;
+--line:#273043;--acc:#7189ff;--rec:#f05d72;--ok:#35c58b;--amb:#e8b84a}
 @media(prefers-color-scheme:light){:root{--bg:#f7f8fa;--fg:#1a1d24;--mut:#69707f;
 --card:#fff;--line:#e4e7ee;--acc:#4463d8}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);
@@ -2494,6 +2494,34 @@ user-select:none;white-space:nowrap;border:1px solid transparent}
 .del:hover{color:#fff;background:var(--rec)}
 .del.arm{color:#fff;background:var(--rec);font-size:12px;font-weight:600}
 .files a{margin-right:14px;font-size:13px}
+.workspace-shell{height:100vh;min-width:1180px;display:grid;
+grid-template-columns:280px minmax(560px,1fr) 300px;overflow:hidden}
+.workspace-nav,.workspace-side{background:var(--panel);padding:20px 16px;overflow-y:auto}
+.workspace-nav{border-right:1px solid var(--line)}
+.workspace-side{border-left:1px solid var(--line)}
+.workspace-main{min-width:0;padding:22px 28px;overflow-y:auto;background:var(--bg)}
+.workspace-brand{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.workspace-brand a{color:var(--fg);font-weight:750;font-size:16px}
+.workspace-search{width:100%;background:var(--card);color:var(--fg);border:1px solid var(--line);
+border-radius:9px;padding:9px 11px;margin:10px 0 12px;outline:none}
+.workspace-search:focus{border-color:var(--acc)}
+.workspace-new{display:block;text-align:center;padding:8px 10px;border-radius:9px;
+border:1px solid var(--line);margin-bottom:18px}
+.side-session{display:block;color:var(--fg);padding:9px 10px;border-radius:9px;margin:3px 0}
+.side-session:hover{background:var(--card)}.side-session.active{background:var(--card);box-shadow:inset 3px 0 var(--acc)}
+.side-session b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+.side-session small{display:flex;justify-content:space-between;color:var(--mut);font-size:11px;margin-top:2px}
+.workspace-top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:14px}
+.workspace-main .pipeline{margin:12px 0}.workspace-main .layer-card{margin:0}
+.workspace-main .layer-panel{max-height:calc(100vh - 235px);min-height:520px;padding:14px 34px 30px}
+.workspace-main .layer-panel.md>*{max-width:760px;margin-left:auto;margin-right:auto}
+.side-section{padding:16px 0;border-bottom:1px solid var(--line)}
+.side-section:first-child{padding-top:0}.side-label{font-size:11px;color:var(--mut);font-weight:700;
+letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
+.workspace-side .session-facts{display:grid;gap:9px}.workspace-side .session-fact{display:flex}
+.workspace-side .files{display:grid;gap:8px}.workspace-side .files a{margin:0}
+.workspace-side .progline{margin-top:8px}.workspace-side .pill{margin-top:8px}
+.graph-action{display:block;text-align:center;padding:9px 12px;border:1px solid var(--line);border-radius:9px}
 """
 
 _MD_JS = """
@@ -2719,51 +2747,63 @@ applyStatic();refresh();setInterval(refresh,2000);
 _SESSION_HTML = """<!doctype html><meta charset=utf-8>
 <meta name=viewport content="width=device-width,initial-scale=1">
 <title>notes __SID__</title><style>__CSS__</style>
-<div class=wrap>
- <div class=row><div>
-   <div class=mut><a id=backlink href=/></a></div>
-   <h1 id=title class=editable-title onclick=beginTitleEdit()></h1><div class=mut id=sub></div></div>
-  <div style="text-align:right">
-   <div id=uilang style="margin-bottom:8px"></div>
-   <div id=pill class=pill><span class=dot></span><span id=plabel>…</span></div><br>
-   <button id=stop class=stop style="margin-top:8px;display:none"
-     onclick="fetch('/api/stop',{method:'POST'})"></button>
-   <button id=resume class=b2 style="margin-top:8px;display:none"
-     onclick="resumeImport()"></button>
-  </div></div>
- <div class="card session-info">
-  <div id=sessionFacts class=session-facts></div>
-  <div id=progress></div>
- </div>
- <div class=card id=errcard style="display:none;color:var(--rec)"></div>
- <div class=pipeline>
+<div class=workspace-shell>
+ <aside class=workspace-nav>
+  <div class=workspace-brand><a href=/>🎙 voice-notes</a><span id=uilang></span></div>
+  <a class=workspace-new id=backlink href=/></a>
+  <input id=sessionSearch class=workspace-search type=search oninput=filterSidebar()>
+  <div id=sideList></div>
+ </aside>
+ <main class=workspace-main>
+  <div class=workspace-top><div>
+   <h1 id=title class=editable-title onclick=beginTitleEdit()></h1>
+   <div class=mut id=sub></div>
+  </div><div id=pill class=pill><span class=dot></span><span id=plabel>…</span></div></div>
+  <div class=card id=errcard style="display:none;color:var(--rec)"></div>
+  <div class=pipeline>
    <div id=st1 class=stage onclick="showLayer(1)"><b>Layer 1</b><span id=l1lab></span></div>
    <div id=st2 class=stage onclick="showLayer(2)"><b>Layer 2</b><span id=l2lab></span></div>
    <div id=st3 class=stage onclick="showLayer(3)"><b>Layer 3</b><span id=l3lab></span></div>
- </div>
- <div class="card layer-card">
-  <div class=layer-head><span id=layerTitle></span>
-   <button id=editLayerBtn class=b2 onclick="beginLayerEdit(event,activeLayer)"></button>
   </div>
-  <div id=layer1 class="layer-panel md active" onclick="beginLayerEdit(event,1)"><p class=mut id=waitmsg></p></div>
-  <div id=layer2 class="layer-panel md" onclick="beginLayerEdit(event,2)"></div>
-  <div id=layer3 class="layer-panel md" onclick="beginLayerEdit(event,3)"></div>
-  <div class="files layer-files">
+  <div class="card layer-card">
+   <div class=layer-head><span id=layerTitle></span>
+    <button id=editLayerBtn class=b2 onclick="beginLayerEdit(event,activeLayer)"></button>
+   </div>
+   <div id=layer1 class="layer-panel md active" onclick="beginLayerEdit(event,1)"><p class=mut id=waitmsg></p></div>
+   <div id=layer2 class="layer-panel md" onclick="beginLayerEdit(event,2)"></div>
+   <div id=layer3 class="layer-panel md" onclick="beginLayerEdit(event,3)"></div>
+  </div>
+ </main>
+ <aside class=workspace-side>
+  <div class=side-section><div class=side-label id=detailsLabel></div>
+   <div id=sessionFacts class=session-facts></div><div id=progress></div>
+  </div>
+  <div class=side-section>
+   <button id=stop class=stop style="display:none" onclick="fetch('/api/stop',{method:'POST'})"></button>
+   <button id=resume class=b2 style="display:none" onclick="resumeImport()"></button>
+  </div>
+  <div class=side-section><div class=side-label id=filesLabel></div><div class=files>
    <a href="/f/__SID__/notes.md" download>⬇ notes.md</a>
    <a href="/f/__SID__/summary.md" download>⬇ summary.md</a>
    <a href="/f/__SID__/transcript.md" download>⬇ transcript.md</a>
    <a id=audioDownload href="/f/__SID__/audio.wav" download>⬇ audio.wav</a>
-  </div>
- </div>
+  </div></div>
+  <div class=side-section><a class=graph-action id=graphlink href=/graph target=_blank></a></div>
+ </aside>
 </div>
 <script>__MDJS__ __I18NJS__ __STATUSJS__
 const sid=__SIDJS__;let last='',lastNotes='';
-let activeLayer=Number(localStorage.getItem('vn_layer_'+sid)||1);
+let activeLayer=Number(localStorage.getItem('vn_layer_'+sid)||3);
 let layerContent={1:'',2:'',3:''};
 let currentTitle='',currentStatus='',editingLayer=0,editingTitle=false,saveMessage='';
+let sidebarSessions=[];
 function applyStatic(){
   document.getElementById('uilang').innerHTML=langSelect();
-  document.getElementById('backlink').textContent=t('allSessions');
+  document.getElementById('backlink').textContent='＋ '+t('addAudio');
+  document.getElementById('sessionSearch').placeholder='⌕ '+({ja:'会議を検索',en:'Search meetings',zh:'搜索会议'}[curLang()]);
+  document.getElementById('detailsLabel').textContent={ja:'セッション詳細',en:'Session details',zh:'会话详情'}[curLang()];
+  document.getElementById('filesLabel').textContent={ja:'ファイル',en:'Files',zh:'文件'}[curLang()];
+  document.getElementById('graphlink').textContent=t('graph')+' ↗';
   document.getElementById('stop').textContent=t('stopBtn');
   document.getElementById('resume').textContent=t('resume');
   document.getElementById('l1lab').textContent=t('l1');
@@ -2772,6 +2812,18 @@ function applyStatic(){
   document.getElementById('editLayerBtn').textContent='✎ '+t('edit');
   document.getElementById('waitmsg').textContent=t('waiting');
   showLayer(activeLayer);
+  loadSidebar();
+}
+async function loadSidebar(){
+  const r=await fetch('/api/sessions');sidebarSessions=await r.json();filterSidebar();
+}
+function filterSidebar(){
+  const q=(document.getElementById('sessionSearch').value||'').toLowerCase();
+  document.getElementById('sideList').innerHTML=sidebarSessions.filter(s=>(s.title||'').toLowerCase().includes(q)).map(s=>{
+    const pct=Math.max(0,Math.min(100,Number(s.progress_percent||0)));
+    return `<a class="side-session ${s.id===sid?'active':''}" href="/s/${s.id}"><b>${esc(s.title)}</b>`+
+      `<small><span>${esc((s.started||'').slice(0,10))}</span><span>${pct}%</span></small></a>`;
+  }).join('');
 }
 function stages(s,hasTranscript,hasNotes){
   document.getElementById('st1').className='stage '+(hasTranscript?'on ':'')+(activeLayer===1?'active':'');
